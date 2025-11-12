@@ -3,7 +3,11 @@ import { readFile } from 'fs/promises';
 import { join } from 'path';
 import { existsSync } from 'fs';
 
-const PDFS_DIR = join(process.cwd(), 'public', 'pdfs');
+// Use /tmp in production (Netlify) or public/pdfs in development
+const isProduction = process.env.NODE_ENV === 'production';
+const PDFS_DIR = isProduction 
+  ? join('/tmp', 'pdfs')
+  : join(process.cwd(), 'public', 'pdfs');
 
 export async function GET(
   request: NextRequest,
@@ -19,6 +23,23 @@ export async function GET(
       );
     }
 
+    // In production, check for base64 parameter (from generation)
+    const { searchParams } = new URL(request.url);
+    const base64Pdf = searchParams.get('base64');
+    
+    if (base64Pdf) {
+      // Return PDF from base64
+      const pdfBuffer = Buffer.from(base64Pdf, 'base64');
+      return new NextResponse(pdfBuffer, {
+        headers: {
+          'Content-Type': 'application/pdf',
+          'Content-Disposition': `inline; filename="${documentId}.pdf"`,
+          'Cache-Control': 'public, max-age=3600',
+        },
+      });
+    }
+
+    // In development, try to read from file system
     const filepath = join(PDFS_DIR, `${documentId}.pdf`);
 
     // Check if file exists

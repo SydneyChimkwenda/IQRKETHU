@@ -1,5 +1,6 @@
 import { Document } from '@/types';
-import puppeteer from 'puppeteer';
+import puppeteer from 'puppeteer-core';
+import chromium from '@sparticuz/chromium';
 
 // HTML template for PDF generation
 function generateDocumentHTML(document: Document, moduleName?: string): string {
@@ -429,11 +430,38 @@ function generateDocumentHTML(document: Document, moduleName?: string): string {
 export async function generatePDFFromDocument(document: Document, moduleName?: string): Promise<Buffer> {
   let browser;
   try {
-    // Launch browser
-    browser = await puppeteer.launch({
+    // Configure Chromium for serverless environment (Netlify)
+    const isProduction = process.env.NODE_ENV === 'production';
+    const isNetlify = process.env.NETLIFY === 'true' || process.env.NETLIFY_DEV === 'true';
+    
+    const launchOptions: any = {
       headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox'],
-    });
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-gpu',
+      ],
+    };
+
+    // Use @sparticuz/chromium in production/Netlify environment
+    if (isProduction || isNetlify) {
+      // Set Chromium executable path for serverless
+      chromium.setGraphicsMode(false);
+      launchOptions.executablePath = await chromium.executablePath();
+      launchOptions.args = [
+        ...chromium.args,
+        '--hide-scrollbars',
+        '--disable-web-security',
+      ];
+    } else {
+      // Development: try to use system Chrome/Chromium
+      // If not found, will need to install puppeteer or set CHROME_PATH
+      launchOptions.args.push('--single-process');
+    }
+
+    // Launch browser
+    browser = await puppeteer.launch(launchOptions);
 
     const page = await browser.newPage();
     
