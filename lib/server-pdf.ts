@@ -467,7 +467,7 @@ export async function generatePDFFromDocument(document: Document, moduleName?: s
     if (useServerlessChromium) {
       try {
         // Configure Chromium for serverless (Netlify Functions)
-        chromium.setGraphicsMode(false);
+        chromium.setGraphicsMode = false;
         const executablePath = await chromium.executablePath();
         console.log('Using Chromium executable path:', executablePath);
         
