@@ -435,11 +435,21 @@ export async function generatePDFFromDocument(document: Document, moduleName?: s
     const isNetlify = 
       process.env.NETLIFY === 'true' || 
       process.env.NETLIFY_DEV === 'true' ||
-      process.env.AWS_LAMBDA_FUNCTION_NAME !== undefined ||
-      process.env.VERCEL !== 'true'; // If not Vercel and in production, assume Netlify
+      process.env.AWS_LAMBDA_FUNCTION_NAME !== undefined;
     
     const isProduction = process.env.NODE_ENV === 'production';
-    const useServerlessChromium = isProduction || isNetlify;
+    const isVercel = process.env.VERCEL === '1' || process.env.VERCEL === 'true';
+    
+    // Use serverless Chromium in production (Netlify or other serverless) but not Vercel
+    const useServerlessChromium = (isProduction || isNetlify) && !isVercel;
+    
+    console.log('PDF Generation Environment:', {
+      isNetlify,
+      isProduction,
+      isVercel,
+      useServerlessChromium,
+      nodeEnv: process.env.NODE_ENV,
+    });
     
     const launchOptions: any = {
       headless: true,
@@ -455,22 +465,41 @@ export async function generatePDFFromDocument(document: Document, moduleName?: s
 
     // Use @sparticuz/chromium in production/Netlify environment
     if (useServerlessChromium) {
-      // Configure Chromium for serverless (Netlify Functions)
-      chromium.setGraphicsMode(false);
-      launchOptions.executablePath = await chromium.executablePath();
-      launchOptions.args = [
-        ...chromium.args,
-        '--hide-scrollbars',
-        '--disable-web-security',
-        '--disable-features=IsolateOrigins,site-per-process',
-      ];
+      try {
+        // Configure Chromium for serverless (Netlify Functions)
+        chromium.setGraphicsMode(false);
+        const executablePath = await chromium.executablePath();
+        console.log('Using Chromium executable path:', executablePath);
+        
+        if (!executablePath) {
+          throw new Error('Chromium executable path not found. @sparticuz/chromium may not be installed correctly.');
+        }
+        
+        launchOptions.executablePath = executablePath;
+        launchOptions.args = [
+          ...chromium.args,
+          '--hide-scrollbars',
+          '--disable-web-security',
+          '--disable-features=IsolateOrigins,site-per-process',
+        ];
+      } catch (chromiumError: any) {
+        console.error('Error configuring Chromium:', chromiumError);
+        throw new Error(`Failed to configure Chromium for serverless: ${chromiumError.message}`);
+      }
     } else {
       // Development: try to use system Chrome/Chromium
       // If not found, will need to install puppeteer or set CHROME_PATH
+      console.log('Using local Chrome/Chromium for development');
       launchOptions.args.push('--single-process');
     }
 
     // Launch browser with optimized settings
+    console.log('Launching browser with options:', {
+      headless: launchOptions.headless,
+      executablePath: launchOptions.executablePath ? 'set' : 'not set',
+      argsCount: launchOptions.args.length,
+    });
+    
     browser = await puppeteer.launch(launchOptions);
 
     const page = await browser.newPage();
@@ -508,12 +537,33 @@ export async function generatePDFFromDocument(document: Document, moduleName?: s
     });
 
     return Buffer.from(pdfBuffer);
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error generating PDF:', error);
-    throw error;
+    console.error('Error details:', {
+      message: error?.message,
+      stack: error?.stack,
+      name: error?.name,
+    });
+    
+    // Provide more helpful error messages
+    if (error?.message?.includes('executable') || error?.message?.includes('Chromium')) {
+      throw new Error(`Chromium browser not found. This is required for PDF generation. Error: ${error.message}`);
+    }
+    if (error?.message?.includes('timeout')) {
+      throw new Error(`PDF generation timed out. The document may be too complex. Error: ${error.message}`);
+    }
+    if (error?.message?.includes('memory') || error?.message?.includes('Memory')) {
+      throw new Error(`Insufficient memory for PDF generation. Please increase function memory allocation. Error: ${error.message}`);
+    }
+    
+    throw new Error(`PDF generation failed: ${error?.message || 'Unknown error'}`);
   } finally {
     if (browser) {
-      await browser.close();
+      try {
+        await browser.close();
+      } catch (closeError) {
+        console.error('Error closing browser:', closeError);
+      }
     }
   }
 }

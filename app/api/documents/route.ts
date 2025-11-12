@@ -78,8 +78,13 @@ export async function POST(request: NextRequest) {
     }
   } catch (error: any) {
     console.error('Error generating PDF:', error);
+    console.error('Error stack:', error?.stack);
     return NextResponse.json(
-      { error: 'Failed to generate PDF', details: error.message },
+      { 
+        error: 'Failed to generate PDF', 
+        details: error?.message || 'Unknown error occurred',
+        type: error?.name || 'Error',
+      },
       { status: 500 }
     );
   }

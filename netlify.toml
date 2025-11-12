@@ -13,6 +13,7 @@
   node_bundler = "esbuild"
   included_files = [
     "lib/**",
-    "types/**"
+    "types/**",
+    "node_modules/@sparticuz/chromium/**"
   ]
 
