@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import { X, Mail, Loader2 } from 'lucide-react';
 import { sendDocumentEmail } from '@/lib/email';
-import { generatePDFLink } from '@/lib/api-client';
+import { generateInvoicePDF, blobUrlToDataUrl } from '@/lib/pdfshift';
+import { generateEmailHTML } from '@/lib/email';
 import { Document } from '@/types';
 
 interface SendEmailModalProps {
@@ -34,19 +35,44 @@ export default function SendEmailModal({ document, isOpen, onClose, onSuccess }:
     }
 
     try {
-      // First, generate PDF and get download link
+      // First, generate PDF using PDFShift.io
       setError('Generating PDF...');
-      const pdfResult = await generatePDFLink(document);
       
-      if (!pdfResult.success || !pdfResult.downloadLink) {
-        setError(pdfResult.error || 'Failed to generate PDF link');
+      // Generate HTML for the document (same HTML used in emails)
+      const documentHtml = generateEmailHTML(document);
+      
+      // Convert HTML to PDF using PDFShift
+      let pdfBlobUrl: string;
+      try {
+        pdfBlobUrl = await generateInvoicePDF(documentHtml);
+      } catch (pdfError: any) {
+        // Show user-friendly error message
+        const errorMessage = pdfError.message || 'Failed to generate PDF';
+        setError(`PDF Generation Error: ${errorMessage}`);
         setLoading(false);
+        
+        // Show alert for better visibility
+        alert(`PDF Generation Failed:\n\n${errorMessage}\n\nPlease check:\n1. PDFShift API key is configured\n2. Your internet connection\n3. Try again later`);
         return;
+      }
+
+      // Convert blob URL to data URL (base64) for email
+      // Blob URLs are only valid in the browser session, so we convert to data URL for email
+      setError('Preparing PDF for email...');
+      let pdfDownloadLink: string;
+      try {
+        pdfDownloadLink = await blobUrlToDataUrl(pdfBlobUrl);
+        // Clean up the blob URL to free memory
+        URL.revokeObjectURL(pdfBlobUrl);
+      } catch (conversionError: any) {
+        // If conversion fails, use blob URL as fallback (works in browser)
+        console.warn('Failed to convert blob to data URL, using blob URL:', conversionError);
+        pdfDownloadLink = pdfBlobUrl;
       }
 
       // Then send email with PDF link
       setError('Sending email...');
-      const result = await sendDocumentEmail(document, email, name, pdfResult.downloadLink);
+      const result = await sendDocumentEmail(document, email, name, pdfDownloadLink);
       
       if (result.success) {
         setSuccess(true);
