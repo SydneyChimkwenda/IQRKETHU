@@ -9,9 +9,15 @@ This guide explains how PDF generation is configured to work on Netlify's server
 The `netlify.toml` file configures:
 - **Next.js Plugin**: Automatically converts Next.js API routes to Netlify Functions
 - **Function Settings**:
-  - Timeout: 60 seconds (maximum for Pro plan, 26s for free tier)
-  - Memory: 3008MB (required for Chromium/Puppeteer)
   - Node bundler: esbuild (for faster builds)
+  - Included files: lib/** and types/** for PDF generation
+
+**Important**: Timeout and memory settings need to be configured in the Netlify Dashboard:
+1. Go to Netlify Dashboard → Site settings → Functions
+2. Set timeout to 60 seconds (or 26s for free tier)
+3. Set memory to 3008MB (required for Chromium/Puppeteer)
+
+Alternatively, you can configure these via Netlify's API or CLI.
 
 ### 2. PDF Generation Setup
 
