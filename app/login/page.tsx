@@ -31,8 +31,8 @@ export default function LoginPage() {
       setLoading(false);
       // Check if module is selected, if not redirect to module selection
       const { getSelectedModule } = await import('@/lib/module');
-      const module = getSelectedModule();
-      if (module) {
+      const selectedModule = getSelectedModule();
+      if (selectedModule) {
         router.push('/');
       } else {
         router.push('/select-module');

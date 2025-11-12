@@ -27,8 +27,8 @@ export default function SplashScreen({ onComplete }: { onComplete: () => void })
     // After 8 seconds, check where to redirect
     const timer = setTimeout(() => {
       if (isAuthenticated()) {
-        const module = getSelectedModule();
-        if (module) {
+        const selectedModule = getSelectedModule();
+        if (selectedModule) {
           router.push('/');
         } else {
           router.push('/select-module');
@@ -69,4 +69,5 @@ export default function SplashScreen({ onComplete }: { onComplete: () => void })
     </div>
   );
 }
+
 

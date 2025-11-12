@@ -23,7 +23,8 @@ export function setSelectedModule(module: ModuleType): void {
 }
 
 export function getModuleName(): string {
-  const module = getSelectedModule();
-  return module ? MODULE_NAMES[module] : 'KETHU GROUPS';
+  const selectedModule = getSelectedModule();
+  return selectedModule ? MODULE_NAMES[selectedModule] : 'KETHU GROUPS';
 }
+
 

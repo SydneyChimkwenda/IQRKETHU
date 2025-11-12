@@ -24,8 +24,8 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
     }
 
     // Check if module is selected (except for select-module page)
-    const module = getSelectedModule();
-    if (!module && pathname !== '/select-module') {
+    const selectedModule = getSelectedModule();
+    if (!selectedModule && pathname !== '/select-module') {
       router.push('/select-module');
       return;
     }
