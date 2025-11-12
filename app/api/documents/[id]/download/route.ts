@@ -3,9 +3,12 @@ import { readFile } from 'fs/promises';
 import { join } from 'path';
 import { existsSync } from 'fs';
 
-// Use /tmp in production (Netlify) or public/pdfs in development
-const isProduction = process.env.NODE_ENV === 'production';
-const PDFS_DIR = isProduction 
+// Use /tmp in Netlify or public/pdfs in development
+const isNetlify = 
+  process.env.NETLIFY === 'true' || 
+  process.env.NETLIFY_DEV === 'true' ||
+  (process.env.NODE_ENV === 'production' && process.env.VERCEL !== 'true');
+const PDFS_DIR = isNetlify 
   ? join('/tmp', 'pdfs')
   : join(process.cwd(), 'public', 'pdfs');
 

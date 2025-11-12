@@ -431,8 +431,15 @@ export async function generatePDFFromDocument(document: Document, moduleName?: s
   let browser;
   try {
     // Configure Chromium for serverless environment (Netlify)
+    // Detect Netlify environment - check multiple indicators
+    const isNetlify = 
+      process.env.NETLIFY === 'true' || 
+      process.env.NETLIFY_DEV === 'true' ||
+      process.env.AWS_LAMBDA_FUNCTION_NAME !== undefined ||
+      process.env.VERCEL !== 'true'; // If not Vercel and in production, assume Netlify
+    
     const isProduction = process.env.NODE_ENV === 'production';
-    const isNetlify = process.env.NETLIFY === 'true' || process.env.NETLIFY_DEV === 'true';
+    const useServerlessChromium = isProduction || isNetlify;
     
     const launchOptions: any = {
       headless: true,
@@ -441,18 +448,21 @@ export async function generatePDFFromDocument(document: Document, moduleName?: s
         '--disable-setuid-sandbox',
         '--disable-dev-shm-usage',
         '--disable-gpu',
+        '--disable-software-rasterizer',
+        '--disable-extensions',
       ],
     };
 
     // Use @sparticuz/chromium in production/Netlify environment
-    if (isProduction || isNetlify) {
-      // Set Chromium executable path for serverless
+    if (useServerlessChromium) {
+      // Configure Chromium for serverless (Netlify Functions)
       chromium.setGraphicsMode(false);
       launchOptions.executablePath = await chromium.executablePath();
       launchOptions.args = [
         ...chromium.args,
         '--hide-scrollbars',
         '--disable-web-security',
+        '--disable-features=IsolateOrigins,site-per-process',
       ];
     } else {
       // Development: try to use system Chrome/Chromium
@@ -460,18 +470,31 @@ export async function generatePDFFromDocument(document: Document, moduleName?: s
       launchOptions.args.push('--single-process');
     }
 
-    // Launch browser
+    // Launch browser with optimized settings
     browser = await puppeteer.launch(launchOptions);
 
     const page = await browser.newPage();
     
+    // Optimize page settings for faster rendering
+    await page.setViewport({
+      width: 1200,
+      height: 1600,
+      deviceScaleFactor: 2,
+    });
+    
     // Generate HTML
     const html = generateDocumentHTML(document, moduleName);
     
-    // Set content
-    await page.setContent(html, { waitUntil: 'networkidle0' });
+    // Set content with optimized wait strategy
+    await page.setContent(html, { 
+      waitUntil: 'load', // Changed from networkidle0 for faster execution
+      timeout: 30000,
+    });
     
-    // Generate PDF
+    // Wait a bit for any dynamic content to render (using setTimeout for compatibility)
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    // Generate PDF with optimized settings
     const pdfBuffer = await page.pdf({
       format: 'A4',
       printBackground: true,
@@ -481,6 +504,7 @@ export async function generatePDFFromDocument(document: Document, moduleName?: s
         bottom: '0mm',
         left: '0mm',
       },
+      preferCSSPageSize: false,
     });
 
     return Buffer.from(pdfBuffer);

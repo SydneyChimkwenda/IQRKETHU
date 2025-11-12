@@ -1,0 +1,24 @@
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "22"
+  NPM_FLAGS = "--legacy-peer-deps"
+
+# Next.js plugin configuration (required for Next.js on Netlify)
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+# Configure Netlify Functions for PDF generation
+# Next.js API routes automatically become Netlify Functions via @netlify/plugin-nextjs
+# These settings apply to all functions
+[functions]
+  node_bundler = "esbuild"
+  # Include necessary files for PDF generation
+  included_files = ["lib/**", "types/**"]
+  # Increase timeout for PDF generation (max 60s for Pro, 26s for free tier)
+  timeout = 60
+  # Increase memory for Chromium (max 3008MB, recommended for Puppeteer)
+  memory = 3008
+

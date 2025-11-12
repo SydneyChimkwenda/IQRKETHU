@@ -7,8 +7,11 @@ import { Document } from '@/types';
 import { generatePDFFromDocument } from '@/lib/server-pdf';
 
 // Use /tmp in production (Netlify) or public/pdfs in development
-const isProduction = process.env.NODE_ENV === 'production';
-const PDFS_DIR = isProduction 
+const isNetlify = 
+  process.env.NETLIFY === 'true' || 
+  process.env.NETLIFY_DEV === 'true' ||
+  (process.env.NODE_ENV === 'production' && process.env.VERCEL !== 'true');
+const PDFS_DIR = isNetlify 
   ? join('/tmp', 'pdfs')
   : join(process.cwd(), 'public', 'pdfs');
 
@@ -40,9 +43,9 @@ export async function POST(request: NextRequest) {
     // Generate PDF with module name
     const pdfBuffer = await generatePDFFromDocument(document, moduleName);
 
-    // In production (Netlify), return PDF as base64 since /tmp is temporary
+    // In Netlify, return PDF as base64 since /tmp is temporary
     // In development, save to file system
-    if (isProduction) {
+    if (isNetlify) {
       // Return PDF as base64 for direct download
       const base64Pdf = pdfBuffer.toString('base64');
       const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 
