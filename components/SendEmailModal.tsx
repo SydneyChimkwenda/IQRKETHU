@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { X, Mail, Loader2 } from 'lucide-react';
 import { sendDocumentEmail } from '@/lib/email';
+import { generatePDFLink } from '@/lib/api-client';
 import { Document } from '@/types';
 
 interface SendEmailModalProps {
@@ -33,9 +34,24 @@ export default function SendEmailModal({ document, isOpen, onClose, onSuccess }:
     }
 
     try {
-      // Send email via backend API
+      // Step 1: Generate PDF and get download link
+      setError('Generating PDF...');
+      const pdfResult = await generatePDFLink(document);
+      
+      if (!pdfResult.success) {
+        setError(`PDF Generation Error: ${pdfResult.error || 'Failed to generate PDF'}`);
+        setLoading(false);
+        return;
+      }
+
+      // Step 2: Send email with PDF link via backend API
       setError('Sending email...');
-      const result = await sendDocumentEmail(document, email, name);
+      const result = await sendDocumentEmail(
+        document, 
+        email, 
+        name, 
+        pdfResult.downloadLink
+      );
       
       if (result.success) {
         setSuccess(true);
