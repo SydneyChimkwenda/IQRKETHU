@@ -63,37 +63,33 @@ The dashboard provides:
 - Quick action buttons to create new documents
 - Recent documents list
 
-## Email Configuration (Optional)
+## Backend API Configuration
 
-The app supports sending documents via email using EmailJS. If EmailJS is not configured, the app will fall back to opening your default email client with a pre-filled message.
+The frontend communicates with a backend API deployed on Render for PDF generation and email sending.
 
-### Setting up EmailJS
+### Setting up Backend API URL
 
-1. Sign up for a free account at [EmailJS](https://www.emailjs.com/)
-2. Create an email service (Gmail, Outlook, etc.)
-3. Create an email template with the following variables:
-   - `to_email` - Recipient email
-   - `to_name` - Recipient name
-   - `from_name` - Your company name
-   - `from_email` - Your email
-   - `subject` - Email subject
-   - `message` - Email message
-   - `document_html` - HTML content of the document
-   - `document_number` - Document number
-   - `document_type` - Invoice/Quotation/Receipt
-   - `total_amount` - Total amount
-   - `document_date` - Document date
-
-4. Create a `.env.local` file in the root directory:
+1. Create a `.env.local` file in the root directory:
 ```env
-NEXT_PUBLIC_EMAILJS_SERVICE_ID=your_service_id
-NEXT_PUBLIC_EMAILJS_TEMPLATE_ID=your_template_id
-NEXT_PUBLIC_EMAILJS_PUBLIC_KEY=your_public_key
+NEXT_PUBLIC_BACKEND_API_URL=https://your-backend-url.onrender.com
 ```
 
-5. Restart your development server
+2. Replace `your-backend-url.onrender.com` with your actual Render backend URL.
 
-**Note**: Without EmailJS configuration, the app will use `mailto:` links as a fallback, which opens your default email client.
+3. For local development (if running backend locally):
+```env
+NEXT_PUBLIC_BACKEND_API_URL=http://localhost:3001
+```
+
+4. Restart your development server after creating/updating the `.env.local` file.
+
+**Note**: The `.env.local` file is already in `.gitignore` and will not be committed to version control.
+
+## Email Configuration
+
+The app supports sending documents via email through the backend API. The backend handles email sending using EmailJS. If the backend is not available, the app will fall back to opening your default email client with a pre-filled message.
+
+**Note**: Email configuration is handled on the backend. See `DEPLOYMENT.md` for backend setup instructions.
 
 ## Data Storage
 
