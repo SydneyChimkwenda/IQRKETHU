@@ -4,7 +4,7 @@ This guide explains how to set up PDFShift.io for PDF generation in your invoice
 
 ## Overview
 
-The app now uses PDFShift.io to generate PDFs directly from the browser (frontend-only). This works on Netlify without requiring a backend server.
+The app uses PDFShift.io to generate PDFs via a secure server-side API route. The API key is kept secure on the server and never exposed to the client browser.
 
 ## Setup Instructions
 
@@ -20,8 +20,9 @@ The app now uses PDFShift.io to generate PDFs directly from the browser (fronten
 1. Create a file named `.env.local` in the root directory of your project
 2. Add the following line:
    ```
-   NEXT_PUBLIC_PDFSHIFT_API_KEY=your_api_key_here
+   PDFSHIFT_API_KEY=your_api_key_here
    ```
+   **Important**: Do NOT use `NEXT_PUBLIC_` prefix - this is a server-side only variable
 3. Replace `your_api_key_here` with your actual API key
 4. **Important**: Restart your development server after adding the variable
    ```bash
@@ -35,7 +36,7 @@ The app now uses PDFShift.io to generate PDFs directly from the browser (fronten
 3. Navigate to: **Site settings** → **Environment variables**
 4. Click **Add variable**
 5. Enter:
-   - **Key**: `NEXT_PUBLIC_PDFSHIFT_API_KEY`
+   - **Key**: `PDFSHIFT_API_KEY` (no `NEXT_PUBLIC_` prefix)
    - **Value**: Your PDFShift API key
 6. Click **Save**
 7. **Important**: Redeploy your site for the changes to take effect
@@ -65,8 +66,8 @@ The app now uses PDFShift.io to generate PDFs directly from the browser (fronten
 ### Error: "PDFShift API key is not configured"
 
 **Solution**: 
-- Check that `NEXT_PUBLIC_PDFSHIFT_API_KEY` is set in `.env.local` (local) or Netlify environment variables (production)
-- Make sure the variable name is exactly `NEXT_PUBLIC_PDFSHIFT_API_KEY` (case-sensitive)
+- Check that `PDFSHIFT_API_KEY` is set in `.env.local` (local) or Netlify environment variables (production)
+- Make sure the variable name is exactly `PDFSHIFT_API_KEY` (no `NEXT_PUBLIC_` prefix, case-sensitive)
 - Restart your dev server or redeploy on Netlify
 
 ### Error: "PDFShift API error (401)"
@@ -94,19 +95,22 @@ The app now uses PDFShift.io to generate PDFs directly from the browser (fronten
 
 1. When user clicks "Send Email":
    - The app generates HTML from the document
-   - Sends HTML to PDFShift.io API
-   - Receives PDF as a blob
-   - Converts to a downloadable URL
+   - Client sends HTML to server-side API route (`/api/pdf/generate`)
+   - Server calls PDFShift.io API with secure API key
+   - Server returns PDF as base64
+   - Client converts to blob URL
    - Includes the PDF link in the email
 
-2. The PDF is generated in the browser (client-side)
-   - No backend server required
+2. Security:
+   - API key is stored server-side only (never exposed to browser)
+   - Uses Next.js API routes for secure server-side processing
    - Works on Netlify Functions
-   - Secure (API key is in environment variables)
+   - Environment variable without `NEXT_PUBLIC_` prefix keeps it server-only
 
 ## Code Location
 
-- **PDF Generation Function**: `lib/pdfshift.ts`
+- **Server-side API Route**: `app/api/pdf/generate/route.ts` (handles PDFShift API calls securely)
+- **Client-side Wrapper**: `lib/pdfshift.ts` (calls the server-side API route)
 - **Email Integration**: `components/SendEmailModal.tsx`
 - **HTML Generation**: `lib/email.ts` (generateEmailHTML function)
 

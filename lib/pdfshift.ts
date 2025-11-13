@@ -1,10 +1,10 @@
 'use client';
 
 /**
- * PDFShift.io Integration
+ * PDFShift.io Integration (Client-side wrapper)
  * 
- * This module provides PDF generation using PDFShift.io API.
- * It's designed to work frontend-only on Netlify (no backend server required).
+ * This module provides PDF generation using PDFShift.io API via a secure server-side route.
+ * The API key is kept secure on the server and never exposed to the client.
  * 
  * SETUP INSTRUCTIONS:
  * 
@@ -14,25 +14,26 @@
  * 
  * 2. For local development (.env.local):
  *    - Create a file named .env.local in the root directory
- *    - Add: NEXT_PUBLIC_PDFSHIFT_API_KEY=your_api_key_here
+ *    - Add: PDFSHIFT_API_KEY=your_api_key_here
+ *    - Note: Do NOT use NEXT_PUBLIC_ prefix (server-side only)
  *    - Restart your dev server after adding the variable
  * 
  * 3. For Netlify deployment:
  *    - Go to Netlify Dashboard → Your Site → Site settings → Environment variables
  *    - Click "Add variable"
- *    - Key: NEXT_PUBLIC_PDFSHIFT_API_KEY
+ *    - Key: PDFSHIFT_API_KEY (no NEXT_PUBLIC_ prefix)
  *    - Value: your_api_key_here
  *    - Click "Save"
  *    - Redeploy your site
  * 
  * TESTING:
  * - Test locally by creating .env.local with your API key
- * - The function will automatically use the environment variable
+ * - The function will call the server-side API route
  * - Check browser console for any errors during PDF generation
  */
 
 /**
- * Generates a PDF from HTML content using PDFShift.io API
+ * Generates a PDF from HTML content using PDFShift.io API via server-side route
  * 
  * @param invoiceHtml - The HTML content to convert to PDF
  * @returns Promise that resolves to a blob URL that can be used for download or email
@@ -46,35 +47,15 @@
  * ```
  */
 export async function generateInvoicePDF(invoiceHtml: string): Promise<string> {
-  // Get API key from environment variable
-  const apiKey = process.env.NEXT_PUBLIC_PDFSHIFT_API_KEY;
-
-  // Check if API key is configured
-  if (!apiKey) {
-    throw new Error(
-      'PDFShift API key is not configured. ' +
-      'Please set NEXT_PUBLIC_PDFSHIFT_API_KEY in your environment variables. ' +
-      'For local development, add it to .env.local. ' +
-      'For Netlify, add it in Site settings → Environment variables.'
-    );
-  }
-
   try {
-    // Prepare the request to PDFShift API
-    // PDFShift API endpoint: https://api.pdfshift.io/v3/convert/pdf
-    // PDFShift uses Basic authentication with the API key
-    const response = await fetch('https://api.pdfshift.io/v3/convert/pdf', {
+    // Call the server-side API route (keeps API key secure)
+    const response = await fetch('/api/pdf/generate', {
       method: 'POST',
       headers: {
-        'Authorization': `Basic ${btoa(`${apiKey}:`)}`, // Basic auth: API key as username, empty password
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        source: invoiceHtml, // HTML content to convert
-        format: 'A4', // PDF format
-        margin: '0mm', // No margins for full-page PDF
-        print_background: true, // Include background colors and images
-        wait_for: 'networkidle0', // Wait for network to be idle
+        html: invoiceHtml,
       }),
     });
 
@@ -82,20 +63,34 @@ export async function generateInvoicePDF(invoiceHtml: string): Promise<string> {
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ 
         error: 'Unknown error occurred',
-        message: response.statusText 
+        details: response.statusText 
       }));
       
       throw new Error(
-        `PDFShift API error (${response.status}): ${errorData.error || errorData.message || 'Failed to generate PDF'}`
+        errorData.details || errorData.error || `Failed to generate PDF (${response.status})`
       );
     }
 
-    // Get the PDF as a blob
-    const pdfBlob = await response.blob();
+    // Get the response with base64 PDF
+    const data = await response.json();
+    
+    if (!data.success || !data.pdfBase64) {
+      throw new Error('Invalid response from PDF generation service');
+    }
+
+    // Convert base64 to blob
+    const base64Data = data.pdfBase64;
+    const byteCharacters = atob(base64Data);
+    const byteNumbers = new Array(byteCharacters.length);
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+    const byteArray = new Uint8Array(byteNumbers);
+    const pdfBlob = new Blob([byteArray], { type: 'application/pdf' });
 
     // Check if we got a valid PDF
-    if (pdfBlob.type !== 'application/pdf' && pdfBlob.size === 0) {
-      throw new Error('PDFShift returned an invalid PDF file');
+    if (pdfBlob.size === 0) {
+      throw new Error('PDF generation returned an empty file');
     }
 
     // Create a blob URL that can be used for download or email
@@ -105,7 +100,12 @@ export async function generateInvoicePDF(invoiceHtml: string): Promise<string> {
   } catch (error: any) {
     // Provide helpful error messages
     if (error.message.includes('API key')) {
-      throw error; // Re-throw API key errors as-is
+      throw new Error(
+        'PDFShift API key is not configured on the server. ' +
+        'Please set PDFSHIFT_API_KEY in your server environment variables. ' +
+        'For local development, add it to .env.local. ' +
+        'For Netlify, add it in Site settings → Environment variables.'
+      );
     }
     
     if (error.message.includes('network') || error.message.includes('fetch')) {
