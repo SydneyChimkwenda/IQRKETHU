@@ -1,34 +1,30 @@
-import { Document } from '@/types';
-import { formatCurrency } from './utils';
-import { storage } from './storage';
-import { getModuleName } from './module';
+import express from 'express';
+import cors from 'cors';
+import dotenv from 'dotenv';
 
-// Backend API URL
-const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:3001';
+dotenv.config();
 
-export interface EmailParams {
-  to_email: string;
-  to_name: string;
-  subject: string;
-  message: string;
-  document_html: string;
-}
+const app = express();
+const PORT = process.env.PORT || 3001;
 
-export function generateEmailHTML(document: Document, pdfDownloadLink?: string): string {
-  const companyInfo = storage.getCompanyInfo();
+// Email HTML generation function
+function generateEmailHTML(document, pdfDownloadLink, formatCurrency) {
   const documentTitle = document.type === 'invoice' ? 'INVOICE' : 
                         document.type === 'quotation' ? 'QUOTATION' : 
                         'RECEIPT';
 
-  // Dynamic labels based on document type
   const documentTypeLabel = document.type === 'invoice' ? 'Invoice' : 
                             document.type === 'quotation' ? 'Quotation' : 
                             'Receipt';
   const documentNumberLabel = `${documentTypeLabel} no`;
   const documentToLabel = `${documentTypeLabel} to`;
 
-  // Use green for all document types
   const documentColor = '#16a34a';
+  const companyName = process.env.COMPANY_NAME || 'KETHU GROUPS';
+  const companyTagline = process.env.COMPANY_TAGLINE || 'Second to None – Serving You the Best Way';
+  const companyAddress = process.env.COMPANY_ADDRESS || 'P.O. Box 2069, Area 7, Lilongwe';
+  const companyPhone = process.env.COMPANY_PHONE || '+265 888 921 085';
+  const companyEmail = process.env.COMPANY_EMAIL || 'kethugroups@hotmail.com';
 
   return `
     <!DOCTYPE html>
@@ -44,45 +40,24 @@ export function generateEmailHTML(document: Document, pdfDownloadLink?: string):
           <td align="center">
             <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-top: 5px solid ${documentColor}; border-bottom: 5px solid ${documentColor}; position: relative;">
               ${document.type === 'receipt' ? `
-                <!-- PAID Stamp -->
                 <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-12deg); z-index: 10; pointer-events: none; opacity: 0.45;">
                   <div style="border: 4px solid #dc2626; border-radius: 50%; width: 140px; height: 140px; display: flex; flex-direction: column; align-items: center; justify-content: center; background-color: transparent; box-shadow: 0 3px 10px rgba(220, 38, 38, 0.3), inset 0 0 15px rgba(220, 38, 38, 0.1); position: relative; overflow: hidden; padding: 8px;">
-                    <!-- Stamp texture effect -->
-                    <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: radial-gradient(circle at 20% 30%, rgba(220, 38, 38, 0.12) 0.5px, transparent 0.5px), radial-gradient(circle at 80% 70%, rgba(220, 38, 38, 0.12) 0.5px, transparent 0.5px), radial-gradient(circle at 50% 50%, rgba(220, 38, 38, 0.08) 1px, transparent 1px); background-size: 8px 8px, 10px 10px, 12px 12px; opacity: 0.7;"></div>
-                    
-                    <!-- Module Name -->
-                    <div style="font-size: 10px; font-weight: bold; color: #dc2626; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 4px; position: relative; z-index: 1; text-shadow: 0.5px 0.5px 1px rgba(0, 0, 0, 0.1); line-height: 1.1;">${getModuleName()}</div>
-                    
-                    <!-- Decorative line -->
+                    <div style="font-size: 10px; font-weight: bold; color: #dc2626; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 4px; position: relative; z-index: 1;">${companyName}</div>
                     <div style="width: 70px; height: 1.5px; background-color: #dc2626; margin-bottom: 4px; position: relative; z-index: 1;"></div>
-                    
-                    <!-- PAID text -->
-                    <span style="font-size: 24px; font-weight: 900; color: #dc2626; letter-spacing: 4px; text-transform: uppercase; position: relative; z-index: 1; text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.15); font-family: Arial, sans-serif; line-height: 1;">PAID</span>
-                    
-                    <!-- Date line -->
-                    <div style="font-size: 8px; font-weight: 600; color: #dc2626; letter-spacing: 0.5px; margin-top: 4px; position: relative; z-index: 1; text-shadow: 0.5px 0.5px 1px rgba(0, 0, 0, 0.1); line-height: 1.1;">${new Date(document.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase()}</div>
+                    <span style="font-size: 24px; font-weight: 900; color: #dc2626; letter-spacing: 4px; text-transform: uppercase; position: relative; z-index: 1;">PAID</span>
+                    <div style="font-size: 8px; font-weight: 600; color: #dc2626; letter-spacing: 0.5px; margin-top: 4px; position: relative; z-index: 1;">${new Date(document.date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).toUpperCase()}</div>
                   </div>
                 </div>
               ` : ''}
-              <!-- Header Section -->
               <tr>
                 <td style="padding: 30px; border-bottom: 2px solid ${documentColor};">
                   <table width="100%" cellpadding="0" cellspacing="0">
                     <tr>
                       <td valign="top">
-                        <table cellpadding="0" cellspacing="0">
-                          <tr>
-                            <td valign="top" style="padding-right: 15px;">
-                              <img src="https://via.placeholder.com/80x80/16a34a/ffffff?text=LOGO" alt="KETHU CONSULT Logo" style="width: 80px; height: 80px; object-fit: contain; display: block;" />
-                            </td>
-                            <td valign="top">
-                              <h1 style="margin: 0 0 4px 0; font-size: 28px; font-weight: bold; color: #008080;">${getModuleName()}</h1>
-                              <p style="margin: 0 0 8px 0; font-size: 13px; color: #374151; font-style: italic;">Second to None – Serving You the Best Way</p>
-                              <p style="margin: 0 0 4px 0; font-size: 13px; color: #374151;">P.O. Box 2069, Area 7, Lilongwe</p>
-                              <p style="margin: 0; font-size: 13px; color: #374151;">Tel: +265 888 921 085 | Email: kethugroups@hotmail.com</p>
-                            </td>
-                          </tr>
-                        </table>
+                        <h1 style="margin: 0 0 4px 0; font-size: 28px; font-weight: bold; color: #008080;">${companyName}</h1>
+                        <p style="margin: 0 0 8px 0; font-size: 13px; color: #374151; font-style: italic;">${companyTagline}</p>
+                        <p style="margin: 0 0 4px 0; font-size: 13px; color: #374151;">${companyAddress}</p>
+                        <p style="margin: 0; font-size: 13px; color: #374151;">Tel: ${companyPhone} | Email: ${companyEmail}</p>
                       </td>
                       <td align="right">
                         <h2 style="margin: 0 0 10px 0; font-size: 36px; font-weight: bold; color: ${documentColor};">${documentTitle}</h2>
@@ -98,11 +73,8 @@ export function generateEmailHTML(document: Document, pdfDownloadLink?: string):
                   </table>
                 </td>
               </tr>
-              
-              <!-- Content -->
               <tr>
                 <td style="padding: 30px;">
-                  <!-- Customer To Section -->
                   <div style="margin-bottom: 25px;">
                     <h3 style="margin: 0 0 10px 0; font-size: 13px; font-weight: 600; color: #374151;">${documentToLabel} :</h3>
                     <p style="margin: 0 0 5px 0; font-size: 18px; font-weight: bold; color: #111827;">${document.customerName}</p>
@@ -111,7 +83,6 @@ export function generateEmailHTML(document: Document, pdfDownloadLink?: string):
                     ${document.customerAddress ? `<p style="margin: 3px 0; font-size: 14px; color: #4b5563;">${document.customerAddress}</p>` : ''}
                   </div>
                   
-                  <!-- Items Table -->
                   <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 25px; border-collapse: collapse;">
                     <thead>
                       <tr style="background-color: ${documentColor};">
@@ -137,7 +108,6 @@ export function generateEmailHTML(document: Document, pdfDownloadLink?: string):
                     </tbody>
                   </table>
                   
-                  <!-- Summary Section -->
                   <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 25px;">
                     <tr>
                       <td align="right">
@@ -175,61 +145,15 @@ export function generateEmailHTML(document: Document, pdfDownloadLink?: string):
                     </tr>
                   </table>
                   
-                  <!-- Payment Method -->
-                  <div style="background-color: ${documentColor}; color: #ffffff; padding: 15px; margin-bottom: 20px;">
-                    <p style="margin: 0 0 8px 0; font-size: 13px; font-weight: 600;">PAYMENT METHOD :</p>
-                    <div style="font-size: 13px;">
-                      <p style="margin: 3px 0; color: #ffffff;">Bank : ${companyInfo.taxId || 'Please contact us for bank details'}</p>
-                      <p style="margin: 3px 0; color: #ffffff;">Mobile Money : ${companyInfo.phone || '+265 888 921 085'}</p>
-                    </div>
-                  </div>
-                  
-                  <!-- Thank You -->
-                  <div style="border-top: 1px solid #d1d5db; padding-top: 15px; margin-bottom: 20px;">
-                    <p style="margin: 0; font-size: 15px; color: #374151; font-weight: 500;">Thank you for business with us!</p>
-                  </div>
-                  
                   ${pdfDownloadLink ? `
-                  <!-- PDF Download Link -->
                   <div style="margin-bottom: 25px; text-align: center;">
-                    <a href="${pdfDownloadLink}" style="display: inline-block; background-color: ${documentColor}; color: #ffffff; padding: 14px 32px; text-decoration: none; border-radius: 6px; font-size: 16px; font-weight: bold; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">
-                      📥 Download PDF Document
-                    </a>
-                    <p style="margin: 12px 0 0 0; font-size: 13px; color: #6b7280; text-align: center;">
-                      Click the button above to download your ${documentTypeLabel.toLowerCase()} as a PDF file
-                    </p>
-                    <p style="margin: 8px 0 0 0; font-size: 12px; color: #9ca3af; text-align: center; word-break: break-all;">
-                      Or copy this link: <a href="${pdfDownloadLink}" style="color: ${documentColor}; text-decoration: underline;">${pdfDownloadLink}</a>
-                    </p>
+                    <a href="${pdfDownloadLink}" style="display: inline-block; background-color: ${documentColor}; color: #ffffff; padding: 14px 32px; text-decoration: none; border-radius: 6px; font-size: 16px; font-weight: bold;">📥 Download PDF Document</a>
                   </div>
                   ` : ''}
                   
-                  <!-- Terms and Conditions -->
-                  <div style="margin-bottom: 30px;">
-                    <p style="margin: 0 0 8px 0; font-size: 13px; font-weight: 600; color: #374151;">Term and Conditions :</p>
-                    ${document.notes ? `
-                      <p style="margin: 0; font-size: 13px; color: #4b5563; line-height: 1.6; white-space: pre-line;">${document.notes}</p>
-                    ` : (document.type === 'invoice' ? `
-                      <p style="margin: 0; font-size: 13px; color: #4b5563; line-height: 1.6;">Please send payment within 30 days of receiving this invoice. There will be 10% interest charge per month on late invoice.</p>
-                    ` : '')}
-                  </div>
-                  
-                  <!-- Footer Contact Info -->
                   <div style="border-top: 2px solid ${documentColor}; padding-top: 20px; text-align: center;">
                     <p style="margin: 0 0 12px 0; font-size: 13px; font-weight: 500; color: #374151;">Be rest assured of the best service possible.</p>
-                    <table width="100%" cellpadding="0" cellspacing="0">
-                      <tr>
-                        <td align="center" style="padding: 5px;">
-                          <p style="margin: 0; font-size: 13px; color: ${documentColor}; font-weight: 500;">📞 +265 888 921 085</p>
-                        </td>
-                        <td align="center" style="padding: 5px;">
-                          <p style="margin: 0; font-size: 13px; color: ${documentColor}; font-weight: 500;">✉️ kethugroups@hotmail.com</p>
-                        </td>
-                        <td align="center" style="padding: 5px;">
-                          <p style="margin: 0; font-size: 13px; color: ${documentColor}; font-weight: 500;">📍 P.O. Box 2069, Area 7, Lilongwe</p>
-                        </td>
-                      </tr>
-                    </table>
+                    <p style="margin: 0; font-size: 13px; color: ${documentColor}; font-weight: 500;">📞 ${companyPhone} | ✉️ ${companyEmail} | 📍 ${companyAddress}</p>
                   </div>
                 </td>
               </tr>
@@ -242,86 +166,118 @@ export function generateEmailHTML(document: Document, pdfDownloadLink?: string):
   `;
 }
 
-export async function sendDocumentEmail(
-  document: Document,
-  recipientEmail: string,
-  recipientName: string,
-  pdfDownloadLink?: string
-): Promise<{ success: boolean; error?: string }> {
+// Middleware
+app.use(cors());
+app.use(express.json({ limit: '10mb' }));
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', message: 'Backend API is running' });
+});
+
+// Send email endpoint
+app.post('/api/email/send', async (req, res) => {
   try {
-    // Call backend API to send email
-    const response = await fetch(`${BACKEND_API_URL}/api/email/send`, {
+    const {
+      document,
+      recipientEmail,
+      recipientName,
+      pdfDownloadLink
+    } = req.body;
+
+    // Validate required fields
+    if (!document || !recipientEmail || !recipientName) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields: document, recipientEmail, or recipientName'
+      });
+    }
+
+    // Check if EmailJS is configured
+    const EMAILJS_SERVICE_ID = process.env.EMAILJS_SERVICE_ID;
+    const EMAILJS_TEMPLATE_ID = process.env.EMAILJS_TEMPLATE_ID;
+    const EMAILJS_PUBLIC_KEY = process.env.EMAILJS_PUBLIC_KEY;
+    const EMAILJS_PRIVATE_KEY = process.env.EMAILJS_PRIVATE_KEY;
+
+    if (!EMAILJS_SERVICE_ID || !EMAILJS_TEMPLATE_ID || !EMAILJS_PUBLIC_KEY || !EMAILJS_PRIVATE_KEY) {
+      return res.status(500).json({
+        success: false,
+        error: 'EmailJS is not configured. Please set EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, EMAILJS_PUBLIC_KEY, and EMAILJS_PRIVATE_KEY in environment variables.'
+      });
+    }
+
+    // Generate email HTML
+    const documentTitle = document.type === 'invoice' ? 'Invoice' : 
+                          document.type === 'quotation' ? 'Quotation' : 
+                          'Receipt';
+    
+    const formatCurrency = (amount) => {
+      return new Intl.NumberFormat('en-MW', {
+        style: 'currency',
+        currency: 'MWK',
+      }).format(amount);
+    };
+
+    const documentHtml = generateEmailHTML(document, pdfDownloadLink, formatCurrency);
+
+    // Prepare template parameters
+    const templateParams = {
+      to_email: recipientEmail,
+      to_name: recipientName,
+      from_name: process.env.COMPANY_NAME || 'KETHU GROUPS',
+      from_email: process.env.FROM_EMAIL || 'kethugroups@hotmail.com',
+      reply_to: process.env.REPLY_TO_EMAIL || 'kethugroups@hotmail.com',
+      subject: `${documentTitle} - ${document.documentNumber}`,
+      message: `Please find the ${documentTitle.toLowerCase()} ${document.documentNumber} attached.${pdfDownloadLink ? ` Download PDF: ${pdfDownloadLink}` : ''}`,
+      document_html: documentHtml,
+      document_number: document.documentNumber,
+      document_type: documentTitle,
+      total_amount: formatCurrency(document.total),
+      document_date: new Date(document.date).toLocaleDateString(),
+      pdf_download_link: pdfDownloadLink || '',
+    };
+
+    // Send email using EmailJS REST API
+    const emailjsUrl = `https://api.emailjs.com/api/v1.0/email/send`;
+    
+    const emailjsResponse = await fetch(emailjsUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        document,
-        recipientEmail,
-        recipientName,
-        pdfDownloadLink,
+        service_id: EMAILJS_SERVICE_ID,
+        template_id: EMAILJS_TEMPLATE_ID,
+        user_id: EMAILJS_PUBLIC_KEY,
+        accessToken: EMAILJS_PRIVATE_KEY,
+        template_params: templateParams,
       }),
     });
 
-    const data = await response.json();
-
-    if (!response.ok) {
-      // Fallback to mailto link if backend is not available
-      if (response.status === 500 || response.status === 503) {
-        const subject = encodeURIComponent(
-          `${document.type === 'invoice' ? 'Invoice' : document.type === 'quotation' ? 'Quotation' : 'Receipt'} - ${document.documentNumber}`
-        );
-        const pdfLinkText = pdfDownloadLink ? `\n\nDownload PDF: ${pdfDownloadLink}` : '';
-        const body = encodeURIComponent(
-          `Dear ${recipientName},\n\n` +
-          `Please find the ${document.type} ${document.documentNumber} from ${getModuleName()}.${pdfLinkText}\n\n` +
-          `Total Amount: ${formatCurrency(document.total)}\n` +
-          `Date: ${new Date(document.date).toLocaleDateString()}\n\n` +
-          `Thank you for your business!\n\n` +
-          `Best regards,\n` +
-          `${getModuleName()}\n` +
-          `Email: kethugroups@hotmail.com\n` +
-          `Tel: +265 888 921 085`
-        );
-        window.location.href = `mailto:${recipientEmail}?subject=${subject}&body=${body}`;
-        return { success: true };
-      }
-      
-      return {
-        success: false,
-        error: data.error || 'Failed to send email. Please check your backend configuration.'
-      };
+    if (!emailjsResponse.ok) {
+      const errorData = await emailjsResponse.text();
+      throw new Error(`EmailJS API error: ${emailjsResponse.status} - ${errorData}`);
     }
 
-    return { success: true };
-  } catch (error: any) {
+    const result = await emailjsResponse.json();
+
+    res.json({
+      success: true,
+      message: 'Email sent successfully',
+      messageId: result.text || 'Email sent'
+    });
+
+  } catch (error) {
     console.error('Email sending error:', error);
-    
-    // Fallback to mailto link on network errors
-    if (error.message?.includes('fetch') || error.message?.includes('network')) {
-      const subject = encodeURIComponent(
-        `${document.type === 'invoice' ? 'Invoice' : document.type === 'quotation' ? 'Quotation' : 'Receipt'} - ${document.documentNumber}`
-      );
-      const pdfLinkText = pdfDownloadLink ? `\n\nDownload PDF: ${pdfDownloadLink}` : '';
-      const body = encodeURIComponent(
-        `Dear ${recipientName},\n\n` +
-        `Please find the ${document.type} ${document.documentNumber} from ${getModuleName()}.${pdfLinkText}\n\n` +
-        `Total Amount: ${formatCurrency(document.total)}\n` +
-        `Date: ${new Date(document.date).toLocaleDateString()}\n\n` +
-        `Thank you for your business!\n\n` +
-        `Best regards,\n` +
-        `${getModuleName()}\n` +
-        `Email: kethugroups@hotmail.com\n` +
-        `Tel: +265 888 921 085`
-      );
-      window.location.href = `mailto:${recipientEmail}?subject=${subject}&body=${body}`;
-      return { success: true };
-    }
-    
-    return {
+    res.status(500).json({
       success: false,
-      error: error.message || 'Failed to send email. Please check your backend connection.'
-    };
+      error: error.message || 'Failed to send email. Please check your EmailJS configuration.'
+    });
   }
-}
+});
+
+app.listen(PORT, () => {
+  console.log(`Backend server running on port ${PORT}`);
+  console.log(`Health check: http://localhost:${PORT}/health`);
+});
 
