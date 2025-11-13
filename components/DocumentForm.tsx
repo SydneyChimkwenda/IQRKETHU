@@ -30,7 +30,7 @@ export default function DocumentForm({ type, document, onSave, onCancel }: Docum
     customerEmail: document?.customerEmail || '',
     customerPhone: document?.customerPhone || '',
     items: document?.items || [{ id: generateId(), description: '', quantity: 1, unitPrice: 0, total: 0 }],
-    taxRate: document?.taxRate || 0,
+    taxRate: document?.taxRate || 16.5,
     discount: document?.discount || 0,
     notes: document?.notes || '',
   });
@@ -282,7 +282,7 @@ export default function DocumentForm({ type, document, onSave, onCancel }: Docum
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-4">
             <div className="flex justify-between">
-              <label className="text-sm font-medium text-gray-700">Tax Rate (%)</label>
+              <label className="text-sm font-medium text-gray-700">VAT Rate (%)</label>
               <input
                 type="number"
                 min="0"
@@ -319,7 +319,7 @@ export default function DocumentForm({ type, document, onSave, onCancel }: Docum
             )}
             {formData.taxRate > 0 && (
               <div className="flex justify-between">
-                <span className="text-gray-600">Tax ({formData.taxRate}%):</span>
+                <span className="text-gray-600">VAT ({formData.taxRate}%):</span>
                 <span className="font-medium">${calculations.taxAmount.toFixed(2)}</span>
               </div>
             )}

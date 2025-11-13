@@ -384,7 +384,7 @@ function generateDocumentHTML(document: Document, moduleName?: string): string {
           ` : ''}
           ${document.taxRate > 0 ? `
             <div class="summary-row">
-              <span class="summary-label">Tax ${document.taxRate}% :</span>
+              <span class="summary-label">VAT ${document.taxRate}% :</span>
               <span class="summary-value">${formatCurrency(document.taxAmount)}</span>
             </div>
           ` : ''}

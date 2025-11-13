@@ -157,7 +157,7 @@ export function generateEmailHTML(document: Document, pdfDownloadLink?: string):
                           ` : ''}
                           ${document.taxRate > 0 ? `
                             <tr>
-                              <td style="padding: 8px 0; font-size: 14px; color: #374151; font-weight: 500;">Tax ${document.taxRate}% :</td>
+                              <td style="padding: 8px 0; font-size: 14px; color: #374151; font-weight: 500;">VAT ${document.taxRate}% :</td>
                               <td align="right" style="padding: 8px 0; font-size: 14px; color: #111827; font-weight: 600;">${formatCurrency(document.taxAmount)}</td>
                             </tr>
                           ` : ''}
