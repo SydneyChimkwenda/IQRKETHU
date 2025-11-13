@@ -4,7 +4,6 @@ import { join } from 'path';
 import { existsSync } from 'fs';
 import { v4 as uuidv4 } from 'uuid';
 import { Document } from '@/types';
-import { generatePDFFromDocument } from '@/lib/server-pdf';
 
 // Use /tmp in production (Netlify) or public/pdfs in development
 const isNetlify = 
@@ -34,48 +33,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Ensure PDFs directory exists
-    await ensurePdfsDirectory();
-
-    // Generate unique ID for this document
-    const documentId = uuidv4();
+    // This endpoint is deprecated - PDF generation is now handled by the backend on Render
+    // Redirect to use backend API instead
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:3001';
     
-    // Generate PDF with module name
-    const pdfBuffer = await generatePDFFromDocument(document, moduleName);
+    return NextResponse.json(
+      { 
+        error: 'This endpoint is deprecated. Please use the backend API for PDF generation.',
+        backendUrl: `${backendUrl}/api/pdf/generate`,
+        message: 'PDF generation is now handled by the backend service on Render.'
+      },
+      { status: 410 } // 410 Gone - indicates the resource is no longer available
+    );
 
-    // In Netlify, return PDF as base64 since /tmp is temporary
-    // In development, save to file system
-    if (isNetlify) {
-      // Return PDF as base64 for direct download
-      const base64Pdf = pdfBuffer.toString('base64');
-      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 
-                     request.nextUrl.origin;
-      
-      return NextResponse.json({
-        success: true,
-        documentId,
-        pdfBase64: base64Pdf,
-        downloadLink: `${baseUrl}/api/documents/${documentId}/download?base64=${encodeURIComponent(base64Pdf)}`,
-        filename: `${document.type}_${document.documentNumber}.pdf`
-      });
-    } else {
-      // Save PDF to file system (development)
-      const filename = `${documentId}.pdf`;
-      const filepath = join(PDFS_DIR, filename);
-      await writeFile(filepath, pdfBuffer);
-
-      // Create download link
-      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 
-                     request.nextUrl.origin;
-      const downloadLink = `${baseUrl}/api/documents/${documentId}/download`;
-
-      return NextResponse.json({
-        success: true,
-        documentId,
-        downloadLink,
-        filename: `${document.type}_${document.documentNumber}.pdf`
-      });
-    }
   } catch (error: any) {
     console.error('Error generating PDF:', error);
     console.error('Error stack:', error?.stack);

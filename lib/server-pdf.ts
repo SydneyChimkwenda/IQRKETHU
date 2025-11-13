@@ -1,5 +1,7 @@
 import { Document } from '@/types';
-import puppeteer from 'puppeteer-core';
+// Note: puppeteer-core and @sparticuz/chromium are not installed
+// This file is kept for reference but PDF generation is now handled by the backend on Render
+// If you need to use this file, install: npm install puppeteer-core @sparticuz/chromium
 
 // HTML template for PDF generation
 function generateDocumentHTML(document: Document, moduleName?: string): string {
@@ -427,6 +429,11 @@ function generateDocumentHTML(document: Document, moduleName?: string): string {
 }
 
 export async function generatePDFFromDocument(document: Document, moduleName?: string): Promise<Buffer> {
+  // This function is deprecated - use the backend API instead
+  // PDF generation is now handled by the backend on Render
+  throw new Error('Server-side PDF generation is deprecated. Please use the backend API at /api/pdf/generate');
+  
+  /* Legacy code below (requires puppeteer-core and @sparticuz/chromium)
   let browser;
   try {
     // Configure Chromium for serverless environment (Netlify)
@@ -578,5 +585,6 @@ export async function generatePDFFromDocument(document: Document, moduleName?: s
       }
     }
   }
+  */
 }
 

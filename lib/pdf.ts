@@ -1,5 +1,5 @@
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
+'use client';
+
 import { Document } from '@/types';
 
 export async function downloadDocumentAsPDF(doc: Document, elementId: string = 'document-view'): Promise<void> {
@@ -7,6 +7,12 @@ export async function downloadDocumentAsPDF(doc: Document, elementId: string = '
     if (typeof window === 'undefined') {
       throw new Error('PDF download is only available in the browser');
     }
+    
+    // Dynamically import client-only libraries
+    const [{ default: jsPDF }, { default: html2canvas }] = await Promise.all([
+      import('jspdf'),
+      import('html2canvas')
+    ]);
     
     const element = window.document.getElementById(elementId);
     if (!element) {
