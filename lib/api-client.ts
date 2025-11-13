@@ -17,7 +17,11 @@ export async function generatePDFLink(document: Document): Promise<PDFGeneration
     const { getModuleName } = await import('./module');
     const moduleName = getModuleName();
 
-    const response = await fetch('/api/documents', {
+    // Get backend API URL
+    const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:3001';
+
+    // Call backend API to generate PDF
+    const response = await fetch(`${BACKEND_API_URL}/api/pdf/generate`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

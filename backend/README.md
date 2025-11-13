@@ -40,6 +40,20 @@ npm run dev
 ### Health Check
 - `GET /health` - Check if the server is running
 
+### Generate PDF
+- `POST /api/pdf/generate`
+- Body:
+```json
+{
+  "document": { ... },
+  "moduleName": "KETHU GROUPS" // optional
+}
+```
+- Returns: `{ success: true, documentId, pdfBase64, downloadLink, filename }`
+
+### Download PDF
+- `GET /api/pdf/download/:id?base64=...` - Download a generated PDF
+
 ### Send Email
 - `POST /api/email/send`
 - Body:
@@ -48,9 +62,11 @@ npm run dev
   "document": { ... },
   "recipientEmail": "customer@example.com",
   "recipientName": "Customer Name",
-  "pdfDownloadLink": "https://..." // optional
+  "pdfDownloadLink": "https://...", // optional - will be auto-generated if not provided
+  "moduleName": "KETHU GROUPS" // optional
 }
 ```
+- If `pdfDownloadLink` is not provided, the backend will automatically generate a PDF
 
 ## Deployment on Render
 

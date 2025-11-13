@@ -249,6 +249,9 @@ export async function sendDocumentEmail(
   pdfDownloadLink?: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
+    // Get module name for backend
+    const moduleName = getModuleName();
+    
     // Call backend API to send email
     const response = await fetch(`${BACKEND_API_URL}/api/email/send`, {
       method: 'POST',
@@ -260,6 +263,7 @@ export async function sendDocumentEmail(
         recipientEmail,
         recipientName,
         pdfDownloadLink,
+        moduleName,
       }),
     });
 

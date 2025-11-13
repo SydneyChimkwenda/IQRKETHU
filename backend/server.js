@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import { generatePDFFromDocument } from './pdf-generator.js';
 
 dotenv.config();
 
@@ -175,6 +176,73 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', message: 'Backend API is running' });
 });
 
+// Generate PDF endpoint
+app.post('/api/pdf/generate', async (req, res) => {
+  try {
+    const { document, moduleName } = req.body;
+
+    // Validate required fields
+    if (!document || !document.type || !document.documentNumber) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid document data. Document, type, and documentNumber are required.'
+      });
+    }
+
+    // Generate PDF
+    const pdfBuffer = await generatePDFFromDocument(document, moduleName);
+    
+    // Convert to base64 for easy transmission
+    const pdfBase64 = pdfBuffer.toString('base64');
+    
+    // Create a download link (using the backend URL)
+    const baseUrl = process.env.BACKEND_URL || `http://localhost:${PORT}`;
+    const documentId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const downloadLink = `${baseUrl}/api/pdf/download/${documentId}?base64=${encodeURIComponent(pdfBase64)}`;
+
+    res.json({
+      success: true,
+      documentId,
+      pdfBase64,
+      downloadLink,
+      filename: `${document.type}_${document.documentNumber}.pdf`
+    });
+
+  } catch (error) {
+    console.error('PDF generation error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to generate PDF'
+    });
+  }
+});
+
+// Download PDF endpoint (for serving the generated PDF)
+app.get('/api/pdf/download/:id', (req, res) => {
+  try {
+    const { base64 } = req.query;
+    
+    if (!base64) {
+      return res.status(400).json({
+        error: 'PDF data not found'
+      });
+    }
+
+    const pdfBuffer = Buffer.from(base64, 'base64');
+    
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `inline; filename="document.pdf"`);
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+    
+    res.send(pdfBuffer);
+  } catch (error) {
+    console.error('PDF download error:', error);
+    res.status(500).json({
+      error: 'Failed to serve PDF'
+    });
+  }
+});
+
 // Send email endpoint
 app.post('/api/email/send', async (req, res) => {
   try {
@@ -182,7 +250,8 @@ app.post('/api/email/send', async (req, res) => {
       document,
       recipientEmail,
       recipientName,
-      pdfDownloadLink
+      pdfDownloadLink,
+      moduleName
     } = req.body;
 
     // Validate required fields
@@ -191,6 +260,21 @@ app.post('/api/email/send', async (req, res) => {
         success: false,
         error: 'Missing required fields: document, recipientEmail, or recipientName'
       });
+    }
+
+    // Generate PDF if not provided
+    let finalPdfDownloadLink = pdfDownloadLink;
+    if (!finalPdfDownloadLink) {
+      try {
+        const pdfBuffer = await generatePDFFromDocument(document, moduleName);
+        const pdfBase64 = pdfBuffer.toString('base64');
+        const baseUrl = process.env.BACKEND_URL || `http://localhost:${PORT}`;
+        const documentId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        finalPdfDownloadLink = `${baseUrl}/api/pdf/download/${documentId}?base64=${encodeURIComponent(pdfBase64)}`;
+      } catch (pdfError) {
+        console.warn('PDF generation failed, sending email without PDF link:', pdfError);
+        // Continue without PDF link
+      }
     }
 
     // Check if EmailJS is configured
@@ -218,7 +302,7 @@ app.post('/api/email/send', async (req, res) => {
       }).format(amount);
     };
 
-    const documentHtml = generateEmailHTML(document, pdfDownloadLink, formatCurrency);
+    const documentHtml = generateEmailHTML(document, finalPdfDownloadLink, formatCurrency);
 
     // Prepare template parameters
     const templateParams = {
@@ -228,13 +312,13 @@ app.post('/api/email/send', async (req, res) => {
       from_email: process.env.FROM_EMAIL || 'kethugroups@hotmail.com',
       reply_to: process.env.REPLY_TO_EMAIL || 'kethugroups@hotmail.com',
       subject: `${documentTitle} - ${document.documentNumber}`,
-      message: `Please find the ${documentTitle.toLowerCase()} ${document.documentNumber} attached.${pdfDownloadLink ? ` Download PDF: ${pdfDownloadLink}` : ''}`,
+      message: `Please find the ${documentTitle.toLowerCase()} ${document.documentNumber} attached.${finalPdfDownloadLink ? ` Download PDF: ${finalPdfDownloadLink}` : ''}`,
       document_html: documentHtml,
       document_number: document.documentNumber,
       document_type: documentTitle,
       total_amount: formatCurrency(document.total),
       document_date: new Date(document.date).toLocaleDateString(),
-      pdf_download_link: pdfDownloadLink || '',
+      pdf_download_link: finalPdfDownloadLink || '',
     };
 
     // Send email using EmailJS REST API
