@@ -468,18 +468,19 @@ export async function generatePDFFromDocument(document: Document, moduleName?: s
         // Dynamically import chromium only when needed
         const chromium = await import('@sparticuz/chromium').catch(() => null);
         
-        if (chromium) {
+        if (chromium && chromium.default) {
           // Configure Chromium for serverless (Netlify Functions)
-          if (chromium.setGraphicsMode !== undefined) {
-            chromium.setGraphicsMode = false;
+          const chromiumModule = chromium.default as any;
+          if (chromiumModule.setGraphicsMode !== undefined) {
+            chromiumModule.setGraphicsMode = false;
           }
-          const executablePath = await chromium.executablePath();
+          const executablePath = await chromiumModule.executablePath();
           console.log('Using Chromium executable path:', executablePath);
           
           if (executablePath) {
             launchOptions.executablePath = executablePath;
             launchOptions.args = [
-              ...(chromium.args || []),
+              ...(chromiumModule.args || []),
               '--hide-scrollbars',
               '--disable-web-security',
               '--disable-features=IsolateOrigins,site-per-process',
