@@ -33,7 +33,7 @@ This guide explains how to deploy the IQR application with separated frontend an
    Add the following in Render's Environment Variables section:
    ```
    EMAILJS_SERVICE_ID=service_87lsqgg
-   EMAILJS_TEMPLATE_ID=tamplate_1ybmi2b
+   EMAILJS_TEMPLATE_ID=template_1ybmi2b
    EMAILJS_PUBLIC_KEY=tCdbv6Pt8Pe2w677F
    EMAILJS_PRIVATE_KEY=o5RNvcNkCAHNqI7bDYsDH
    COMPANY_NAME=KETHU GROUPS
