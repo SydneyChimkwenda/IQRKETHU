@@ -1,6 +1,5 @@
 import { Document } from '@/types';
 import puppeteer from 'puppeteer-core';
-import chromium from '@sparticuz/chromium';
 
 // HTML template for PDF generation
 function generateDocumentHTML(document: Document, moduleName?: string): string {
@@ -466,27 +465,39 @@ export async function generatePDFFromDocument(document: Document, moduleName?: s
     // Use @sparticuz/chromium in production/Netlify environment
     if (useServerlessChromium) {
       try {
-        // Configure Chromium for serverless (Netlify Functions)
-        chromium.setGraphicsMode = false;
-        const executablePath = await chromium.executablePath();
-        console.log('Using Chromium executable path:', executablePath);
+        // Dynamically import chromium only when needed
+        const chromium = await import('@sparticuz/chromium').catch(() => null);
         
-        if (!executablePath) {
-          throw new Error('Chromium executable path not found. @sparticuz/chromium may not be installed correctly.');
+        if (chromium) {
+          // Configure Chromium for serverless (Netlify Functions)
+          if (chromium.setGraphicsMode !== undefined) {
+            chromium.setGraphicsMode = false;
+          }
+          const executablePath = await chromium.executablePath();
+          console.log('Using Chromium executable path:', executablePath);
+          
+          if (executablePath) {
+            launchOptions.executablePath = executablePath;
+            launchOptions.args = [
+              ...(chromium.args || []),
+              '--hide-scrollbars',
+              '--disable-web-security',
+              '--disable-features=IsolateOrigins,site-per-process',
+            ];
+          } else {
+            throw new Error('Chromium executable path not found');
+          }
+        } else {
+          throw new Error('@sparticuz/chromium not available');
         }
-        
-        launchOptions.executablePath = executablePath;
-        launchOptions.args = [
-          ...chromium.args,
-          '--hide-scrollbars',
-          '--disable-web-security',
-          '--disable-features=IsolateOrigins,site-per-process',
-        ];
       } catch (chromiumError: any) {
         console.error('Error configuring Chromium:', chromiumError);
-        throw new Error(`Failed to configure Chromium for serverless: ${chromiumError.message}`);
+        console.warn('Falling back to local Chrome/Chromium');
+        // Fall through to local Chrome/Chromium
       }
-    } else {
+    }
+    
+    if (!launchOptions.executablePath) {
       // Development: try to use system Chrome/Chromium
       // If not found, will need to install puppeteer or set CHROME_PATH
       console.log('Using local Chrome/Chromium for development');
