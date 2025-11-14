@@ -38,13 +38,13 @@ export default function DocumentView({ document }: DocumentViewProps) {
   const kethuConsultEmail = 'kethugroups@hotmail.com';
 
   return (
-    <div id="document-view" className="bg-white print:shadow-none" style={{ 
+    <div id="document-view" className="bg-white print:shadow-none w-full max-w-[210mm] mx-auto px-3 sm:px-6 py-4" style={{ 
       fontFamily: 'Arial, sans-serif', 
-      width: '210mm', 
+      width: '100%',
+      maxWidth: '210mm',
       minHeight: '297mm',
-      height: '297mm',
+      height: 'auto',
       margin: '0 auto', 
-      padding: '15px 25px', 
       borderTop: `5px solid ${primaryColor}`, 
       borderBottom: `5px solid ${primaryColor}`,
       display: 'flex',
@@ -154,47 +154,47 @@ export default function DocumentView({ document }: DocumentViewProps) {
         </div>
       )}
       {/* Header Section - Company name left, INVOICE right */}
-      <div className="flex justify-between items-start mb-2">
+      <div className="flex flex-col sm:flex-row justify-between items-start mb-2 gap-4">
         {/* Left: Company Info with Logo */}
-        <div className="flex items-start gap-3">
+        <div className="flex items-start gap-2 sm:gap-3 flex-1">
           {/* Logo */}
-          <div>
+          <div className="flex-shrink-0">
             <img 
               src="/log.jpg" 
               alt="KETHU CONSULT Logo" 
               className="object-contain"
-              style={{ width: '60px', height: '60px', objectFit: 'contain' }}
+              style={{ width: '50px', height: '50px', objectFit: 'contain' }}
             />
           </div>
           {/* Company Details */}
-          <div>
-            <h1 className="text-2xl font-bold mb-0" style={{ fontSize: '22px', fontWeight: 'bold', marginBottom: '2px', color: '#008080' }}>
+          <div className="flex-1 min-w-0">
+            <h1 className="text-lg sm:text-2xl font-bold mb-0 truncate" style={{ fontSize: 'clamp(18px, 4vw, 22px)', fontWeight: 'bold', marginBottom: '2px', color: '#008080' }}>
               {kethuConsultName}
             </h1>
-            <p className="text-xs text-gray-700 mb-1" style={{ fontSize: '11px', color: '#374151', marginBottom: '4px', fontStyle: 'italic' }}>
+            <p className="text-xs text-gray-700 mb-1" style={{ fontSize: '10px', color: '#374151', marginBottom: '4px', fontStyle: 'italic' }}>
               {kethuConsultTagline}
             </p>
-            <p className="text-xs text-gray-700" style={{ fontSize: '11px', color: '#374151', marginBottom: '2px', lineHeight: '1.3' }}>
+            <p className="text-xs text-gray-700 break-words" style={{ fontSize: '10px', color: '#374151', marginBottom: '2px', lineHeight: '1.3' }}>
               {kethuConsultAddress}
             </p>
-            <p className="text-xs text-gray-700" style={{ fontSize: '11px', color: '#374151', lineHeight: '1.3' }}>
+            <p className="text-xs text-gray-700 break-words" style={{ fontSize: '10px', color: '#374151', lineHeight: '1.3' }}>
               Tel: {kethuConsultPhone} | Email: {kethuConsultEmail}
             </p>
           </div>
         </div>
         
         {/* Right: Document Title and Details */}
-        <div className="text-right">
-          <h2 className="text-3xl font-bold mb-1" style={{ fontSize: '32px', fontWeight: 'bold', color: primaryColor, marginBottom: '4px' }}>
+        <div className="text-left sm:text-right w-full sm:w-auto">
+          <h2 className="text-2xl sm:text-3xl font-bold mb-1" style={{ fontSize: 'clamp(24px, 5vw, 32px)', fontWeight: 'bold', color: primaryColor, marginBottom: '4px' }}>
             {documentTitle}
           </h2>
           {document.type === 'receipt' && (
             <div className="mb-2" style={{ marginBottom: '6px' }}>
-              <span className="inline-block px-4 py-1 rounded text-white font-bold text-sm" style={{ 
+              <span className="inline-block px-3 sm:px-4 py-1 rounded text-white font-bold text-xs sm:text-sm" style={{ 
                 backgroundColor: '#dc2626', 
-                padding: '6px 16px', 
+                padding: '6px 12px', 
                 borderRadius: '4px',
-                fontSize: '14px',
+                fontSize: '12px',
                 fontWeight: 'bold'
               }}>
                 PAID
@@ -233,8 +233,8 @@ export default function DocumentView({ document }: DocumentViewProps) {
       </div>
 
       {/* Items Table - Flexible to expand */}
-      <div className="mb-2" style={{ marginBottom: '10px', flexShrink: 0 }}>
-        <table className="w-full border-collapse" style={{ width: '100%', borderCollapse: 'collapse' }}>
+      <div className="mb-2 overflow-x-auto" style={{ marginBottom: '10px', flexShrink: 0 }}>
+        <table className="w-full border-collapse min-w-[600px]" style={{ width: '100%', borderCollapse: 'collapse', minWidth: '600px' }}>
           <thead>
             <tr className={tableHeaderBg} style={{ backgroundColor: primaryColor }}>
               <th className="text-left py-2 px-3 text-sm font-semibold text-white" style={{ padding: '8px', textAlign: 'left', fontSize: '11px', fontWeight: '600', color: '#ffffff', width: document.type === 'receipt' ? '4%' : '5%' }}>
@@ -283,7 +283,7 @@ export default function DocumentView({ document }: DocumentViewProps) {
 
       {/* Summary Section - Right Aligned - Close to table */}
       <div className="flex justify-end mb-2" style={{ marginBottom: '8px', flexShrink: 0 }}>
-        <div style={{ width: '320px' }}>
+        <div className="w-full sm:w-auto" style={{ width: '100%', maxWidth: '320px' }}>
           <div className="flex justify-between mb-1" style={{ marginBottom: '4px' }}>
             <span style={{ fontSize: '13px', color: '#374151', fontWeight: '500' }}>Sub Total :</span>
             <span style={{ fontSize: '13px', color: '#111827', fontWeight: '600' }}>{formatCurrency(document.subtotal)}</span>
@@ -379,18 +379,18 @@ export default function DocumentView({ document }: DocumentViewProps) {
             Be rest assured of the best service possible.
           </p>
         </div>
-        <div className="flex flex-wrap justify-center gap-4 text-sm" style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '16px', fontSize: '11px' }}>
-          <div className="flex items-center gap-2" style={{ display: 'flex', alignItems: 'center', gap: '8px', color: primaryColor }}>
-            <Phone className="h-4 w-4" style={{ width: '16px', height: '16px' }} />
-            <span style={{ color: '#374151' }}>{kethuConsultPhone}</span>
+        <div className="flex flex-col sm:flex-row flex-wrap justify-center gap-2 sm:gap-4 text-sm" style={{ display: 'flex', flexDirection: 'column', flexWrap: 'wrap', justifyContent: 'center', gap: '8px', fontSize: '11px' }}>
+          <div className="flex items-center justify-center sm:justify-start gap-2" style={{ display: 'flex', alignItems: 'center', gap: '8px', color: primaryColor }}>
+            <Phone className="h-4 w-4 flex-shrink-0" style={{ width: '16px', height: '16px' }} />
+            <span className="break-all" style={{ color: '#374151' }}>{kethuConsultPhone}</span>
           </div>
-          <div className="flex items-center gap-2" style={{ display: 'flex', alignItems: 'center', gap: '8px', color: primaryColor }}>
-            <Mail className="h-4 w-4" style={{ width: '16px', height: '16px' }} />
-            <span style={{ color: '#374151' }}>{kethuConsultEmail}</span>
+          <div className="flex items-center justify-center sm:justify-start gap-2" style={{ display: 'flex', alignItems: 'center', gap: '8px', color: primaryColor }}>
+            <Mail className="h-4 w-4 flex-shrink-0" style={{ width: '16px', height: '16px' }} />
+            <span className="break-all" style={{ color: '#374151' }}>{kethuConsultEmail}</span>
           </div>
-          <div className="flex items-center gap-2" style={{ display: 'flex', alignItems: 'center', gap: '8px', color: primaryColor }}>
-            <MapPin className="h-4 w-4" style={{ width: '16px', height: '16px' }} />
-            <span style={{ color: '#374151' }}>{kethuConsultAddress}</span>
+          <div className="flex items-center justify-center sm:justify-start gap-2" style={{ display: 'flex', alignItems: 'center', gap: '8px', color: primaryColor }}>
+            <MapPin className="h-4 w-4 flex-shrink-0" style={{ width: '16px', height: '16px' }} />
+            <span className="break-words text-center sm:text-left" style={{ color: '#374151' }}>{kethuConsultAddress}</span>
           </div>
         </div>
       </div>

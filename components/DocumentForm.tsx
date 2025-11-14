@@ -210,8 +210,8 @@ export default function DocumentForm({ type, document, onSave, onCancel }: Docum
             Add Item
           </button>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full">
+        <div className="overflow-x-auto -mx-4 sm:mx-0">
+          <table className="w-full min-w-[600px]">
             <thead>
               <tr className="border-b">
                 <th className="text-left py-2 px-2 text-sm font-medium text-gray-700">Description</th>
@@ -346,17 +346,17 @@ export default function DocumentForm({ type, document, onSave, onCancel }: Docum
       </div>
 
       {/* Actions */}
-      <div className="flex justify-end space-x-4">
+      <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 sm:space-x-4">
         <button
           type="button"
           onClick={onCancel}
-          className="px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
+          className="px-4 sm:px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors w-full sm:w-auto"
         >
           Cancel
         </button>
         <button
           type="submit"
-          className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+          className="px-4 sm:px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors w-full sm:w-auto"
         >
           {document ? 'Update' : 'Create'} {type.charAt(0).toUpperCase() + type.slice(1)}
         </button>
