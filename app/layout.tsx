@@ -6,6 +6,9 @@ import SplashScreenWrapper from "@/components/SplashScreenWrapper";
 export const metadata: Metadata = {
   title: "Kethu Groups - Invoice, Quotation & Receipt Manager",
   description: "Manage invoices, quotations, and receipts for Kethu Groups",
+  icons: {
+    icon: '/favicon-16x16.ico',
+  },
 };
 
 export default function RootLayout({

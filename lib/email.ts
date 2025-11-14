@@ -278,11 +278,28 @@ export async function sendDocumentEmailViaBackend(
       }),
     });
 
-    const data = await response.json();
+    // Check if response is JSON before parsing
+    const contentType = response.headers.get('content-type');
+    const isJson = contentType && contentType.includes('application/json');
+    
+    let data: any = {};
+    if (isJson) {
+      try {
+        data = await response.json();
+      } catch (e) {
+        // If JSON parsing fails, treat as error
+        throw new Error('Invalid response from backend');
+      }
+    } else {
+      // If not JSON (likely HTML error page), treat as endpoint not available
+      if (!response.ok) {
+        throw new Error(`Backend endpoint not available (${response.status})`);
+      }
+    }
 
     if (!response.ok) {
-      // Fallback to mailto link if backend is not available
-      if (response.status === 500 || response.status === 503) {
+      // Fallback to mailto link if backend is not available (404, 500, 503)
+      if (response.status === 404 || response.status === 500 || response.status === 503) {
         const subject = encodeURIComponent(
           `${document.type === 'invoice' ? 'Invoice' : document.type === 'quotation' ? 'Quotation' : 'Receipt'} - ${document.documentNumber}`
         );
@@ -312,8 +329,13 @@ export async function sendDocumentEmailViaBackend(
   } catch (error: any) {
     console.error('Email sending error:', error);
     
-    // Fallback to mailto link on network errors
-    if (error.message?.includes('fetch') || error.message?.includes('network')) {
+    // Fallback to mailto link on network errors or endpoint not available
+    if (
+      error.message?.includes('fetch') || 
+      error.message?.includes('network') ||
+      error.message?.includes('endpoint not available') ||
+      error.message?.includes('Invalid response')
+    ) {
       const subject = encodeURIComponent(
         `${document.type === 'invoice' ? 'Invoice' : document.type === 'quotation' ? 'Quotation' : 'Receipt'} - ${document.documentNumber}`
       );
