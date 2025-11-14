@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { X, Mail, Loader2 } from 'lucide-react';
-import { sendDocumentEmail } from '@/lib/email';
+import { sendDocumentEmailViaBackend } from '@/lib/email';
 import { generatePDFLink } from '@/lib/api-client';
 import { Document } from '@/types';
 
@@ -46,7 +46,7 @@ export default function SendEmailModal({ document, isOpen, onClose, onSuccess }:
 
       // Step 2: Send email with PDF link via backend API
       setError('Sending email...');
-      const result = await sendDocumentEmail(
+      const result = await sendDocumentEmailViaBackend(
         document, 
         email, 
         name, 

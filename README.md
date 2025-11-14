@@ -87,9 +87,23 @@ NEXT_PUBLIC_BACKEND_API_URL=http://localhost:3001
 
 ## Email Configuration
 
-The app supports sending documents via email through the backend API. The backend handles email sending using EmailJS. If the backend is not available, the app will fall back to opening your default email client with a pre-filled message.
+The app supports sending documents via email in two ways:
 
-**Note**: Email configuration is handled on the backend. See `DEPLOYMENT.md` for backend setup instructions.
+1. **Backend API** (default): The backend handles email sending using EmailJS. If the backend is not available, the app will fall back to opening your default email client with a pre-filled message.
+
+2. **Frontend EmailJS** (new): You can also send emails directly from the frontend using EmailJS. To use this feature, add these environment variables to your `.env.local` file:
+
+```env
+NEXT_PUBLIC_EMAILJS_PUBLIC_KEY=your_public_key
+NEXT_PUBLIC_EMAILJS_SERVICE_ID=your_service_id
+NEXT_PUBLIC_EMAILJS_TEMPLATE_ID=your_template_id
+```
+
+**For Netlify deployment**, add these same environment variables in your Netlify dashboard under Site settings → Environment variables.
+
+**Note**: Your EmailJS template should include a `{documentUrl}` or `{document_url}` variable that will be replaced with the document download link.
+
+See `DEPLOYMENT.md` for backend setup instructions.
 
 ## Data Storage
 

@@ -2,9 +2,20 @@ import { Document } from '@/types';
 import { formatCurrency } from './utils';
 import { storage } from './storage';
 import { getModuleName } from './module';
+import emailjs from '@emailjs/browser';
 
 // Backend API URL
 const BACKEND_API_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://localhost:3001';
+
+// EmailJS Configuration
+const EMAILJS_PUBLIC_KEY = process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY || '';
+const EMAILJS_SERVICE_ID = process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID || '';
+const EMAILJS_TEMPLATE_ID = process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID || '';
+
+// Initialize EmailJS
+if (typeof window !== 'undefined' && EMAILJS_PUBLIC_KEY) {
+  emailjs.init(EMAILJS_PUBLIC_KEY);
+}
 
 export interface EmailParams {
   to_email: string;
@@ -242,7 +253,7 @@ export function generateEmailHTML(document: Document, pdfDownloadLink?: string):
   `;
 }
 
-export async function sendDocumentEmail(
+export async function sendDocumentEmailViaBackend(
   document: Document,
   recipientEmail: string,
   recipientName: string,
@@ -325,6 +336,133 @@ export async function sendDocumentEmail(
     return {
       success: false,
       error: error.message || 'Failed to send email. Please check your backend connection.'
+    };
+  }
+}
+
+/**
+ * Sends a document email using EmailJS directly from the frontend.
+ * This function calls the backend to generate the document PDF, then uses EmailJS to send the email.
+ * 
+ * @param recipientEmail - The email address of the recipient
+ * @param documentType - The type of document ('invoice' | 'quotation' | 'receipt')
+ * @param document - The document object to send (required to generate PDF)
+ * @returns Promise with success status and optional error message
+ */
+export async function sendDocumentEmail(
+  recipientEmail: string,
+  documentType: 'invoice' | 'quotation' | 'receipt',
+  document: Document
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    // Validate EmailJS configuration
+    if (!EMAILJS_PUBLIC_KEY || !EMAILJS_SERVICE_ID || !EMAILJS_TEMPLATE_ID) {
+      return {
+        success: false,
+        error: 'EmailJS is not configured. Please set NEXT_PUBLIC_EMAILJS_PUBLIC_KEY, NEXT_PUBLIC_EMAILJS_SERVICE_ID, and NEXT_PUBLIC_EMAILJS_TEMPLATE_ID environment variables.'
+      };
+    }
+
+    // Validate recipient email
+    if (!recipientEmail || !recipientEmail.includes('@')) {
+      return {
+        success: false,
+        error: 'Please provide a valid recipient email address.'
+      };
+    }
+
+    // Validate document type matches
+    if (document.type !== documentType) {
+      return {
+        success: false,
+        error: `Document type mismatch. Expected ${documentType}, but document is ${document.type}.`
+      };
+    }
+
+    // Step 1: Call backend to generate document PDF and get URL
+    const moduleName = getModuleName();
+    const generateResponse = await fetch(`${BACKEND_API_URL}/api/pdf/generate`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ document, moduleName }),
+    });
+
+    if (!generateResponse.ok) {
+      const errorData = await generateResponse.json().catch(() => ({}));
+      return {
+        success: false,
+        error: `Failed to generate document: ${errorData.error || generateResponse.statusText || 'Unknown error'}`
+      };
+    }
+
+    const generateData = await generateResponse.json();
+    
+    if (!generateData.success || !generateData.downloadLink) {
+      return {
+        success: false,
+        error: generateData.error || 'Failed to generate document URL'
+      };
+    }
+
+    const documentUrl = generateData.downloadLink;
+
+    // Step 2: Send email using EmailJS
+    // Prepare template parameters - replace {documentUrl} with the actual URL
+    const templateParams = {
+      to_email: recipientEmail,
+      to_name: document.customerName || 'Valued Customer',
+      from_name: getModuleName(),
+      from_email: 'kethugroups@hotmail.com',
+      reply_to: 'kethugroups@hotmail.com',
+      subject: `${documentType === 'invoice' ? 'Invoice' : documentType === 'quotation' ? 'Quotation' : 'Receipt'} - ${document.documentNumber}`,
+      message: `Please find your ${documentType} ${document.documentNumber} attached.`,
+      document_url: documentUrl,
+      documentUrl: documentUrl, // Support both naming conventions
+      document_number: document.documentNumber,
+      document_type: documentType,
+      total_amount: formatCurrency(document.total),
+      document_date: new Date(document.date).toLocaleDateString(),
+    };
+
+    // Send email via EmailJS
+    const emailResult = await emailjs.send(
+      EMAILJS_SERVICE_ID,
+      EMAILJS_TEMPLATE_ID,
+      templateParams
+    );
+
+    if (emailResult.status === 200) {
+      return { success: true };
+    } else {
+      return {
+        success: false,
+        error: `EmailJS returned status ${emailResult.status}. Please check your EmailJS configuration.`
+      };
+    }
+
+  } catch (error: any) {
+    console.error('Error sending document email via EmailJS:', error);
+    
+    // Provide user-friendly error messages
+    if (error.message?.includes('EmailJS')) {
+      return {
+        success: false,
+        error: `EmailJS error: ${error.text || error.message || 'Failed to send email. Please check your EmailJS configuration.'}`
+      };
+    }
+    
+    if (error.message?.includes('fetch') || error.message?.includes('network') || error.message?.includes('Failed to fetch')) {
+      return {
+        success: false,
+        error: 'Network error: Could not connect to the backend API. Please check your internet connection and backend configuration.'
+      };
+    }
+
+    return {
+      success: false,
+      error: error.message || 'An unexpected error occurred while sending the email. Please try again.'
     };
   }
 }
