@@ -319,7 +319,9 @@ export default function DocumentView({ document }: DocumentViewProps) {
         <div className={`${paymentBoxBg} text-white p-3 mb-2`} style={{ backgroundColor: primaryColor, color: '#ffffff', padding: '12px', marginBottom: '8px' }}>
           <p className="font-semibold mb-1" style={{ fontSize: '12px', fontWeight: '600', marginBottom: '4px' }}>PAYMENT METHOD :</p>
           <div className="space-y-0 text-sm" style={{ fontSize: '12px' }}>
-            <p style={{ marginBottom: '2px' }}>Bank : {companyInfo.taxId || 'Please contact us for bank details'}</p>
+            <p style={{ marginBottom: '2px' }}>
+              Bank: Centenary Bank • Account Name: Kethu Groups • Account Number: 5085178645018
+            </p>
             <p style={{ marginBottom: '0' }}>Mobile Money : {companyInfo.phone || kethuConsultPhone}</p>
           </div>
         </div>
