@@ -383,7 +383,7 @@ function generateDocumentHTML(document: Document, moduleName?: string): string {
               <span style="color: #dc2626; font-weight: 600;">-${formatCurrency((document.subtotal * document.discount) / 100)}</span>
             </div>
           ` : ''}
-          ${document.taxRate > 0 ? `
+          ${document.taxAmount > 0 ? `
             <div class="summary-row">
               <span class="summary-label">VAT ${document.taxRate}% :</span>
               <span class="summary-value">${formatCurrency(document.taxAmount)}</span>

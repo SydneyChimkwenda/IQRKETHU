@@ -163,7 +163,7 @@ export function generateEmailHTML(document: Document, pdfDownloadLink?: string):
                               <td align="right" style="padding: 8px 0; font-size: 14px; color: #dc2626; font-weight: 600;">-${formatCurrency((document.subtotal * document.discount) / 100)}</td>
                             </tr>
                           ` : ''}
-                          ${document.taxRate > 0 ? `
+                          ${document.taxAmount > 0 ? `
                             <tr>
                               <td style="padding: 8px 0; font-size: 14px; color: #374151; font-weight: 500;">VAT ${document.taxRate}% :</td>
                               <td align="right" style="padding: 8px 0; font-size: 14px; color: #111827; font-weight: 600;">${formatCurrency(document.taxAmount)}</td>

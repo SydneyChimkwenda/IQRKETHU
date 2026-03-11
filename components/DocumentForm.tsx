@@ -32,15 +32,18 @@ export default function DocumentForm({ type, document, onSave, onCancel }: Docum
     items: document?.items || [{ id: generateId(), description: '', quantity: 1, unitPrice: 0, total: 0 }],
     taxRate: document?.taxRate || 16.5,
     discount: document?.discount || 0,
+    includeVat: document?.includeVat ?? true,
     notes: document?.notes || '',
   });
 
-  const [calculations, setCalculations] = useState(calculateTotal(formData.items, formData.taxRate, formData.discount));
+  const effectiveTaxRate = formData.includeVat ? formData.taxRate : 0;
+  const [calculations, setCalculations] = useState(calculateTotal(formData.items, effectiveTaxRate, formData.discount));
 
   useEffect(() => {
-    const calc = calculateTotal(formData.items, formData.taxRate, formData.discount);
+    const rate = formData.includeVat ? formData.taxRate : 0;
+    const calc = calculateTotal(formData.items, rate, formData.discount);
     setCalculations(calc);
-  }, [formData.items, formData.taxRate, formData.discount]);
+  }, [formData.items, formData.taxRate, formData.discount, formData.includeVat]);
 
   const updateItem = (id: string, field: keyof LineItem, value: string | number) => {
     setFormData(prev => ({
@@ -92,6 +95,7 @@ export default function DocumentForm({ type, document, onSave, onCancel }: Docum
       discount: formData.discount,
       total: calculations.total,
       notes: formData.notes || undefined,
+      includeVat: formData.includeVat,
       status: document?.status || 'draft',
       createdAt: document?.createdAt || now,
       updatedAt: now,
@@ -281,18 +285,32 @@ export default function DocumentForm({ type, document, onSave, onCancel }: Docum
       <div className="bg-white rounded-lg shadow p-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-4">
-            <div className="flex justify-between">
-              <label className="text-sm font-medium text-gray-700">VAT Rate (%)</label>
+            <div className="flex items-center gap-2">
               <input
-                type="number"
-                min="0"
-                max="100"
-                step="0.01"
-                value={formData.taxRate}
-                onChange={(e) => setFormData(prev => ({ ...prev, taxRate: parseFloat(e.target.value) || 0 }))}
-                className="w-24 px-2 py-1 border border-gray-300 rounded text-right focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder:text-gray-400"
+                type="checkbox"
+                id="includeVat"
+                checked={formData.includeVat}
+                onChange={(e) => setFormData(prev => ({ ...prev, includeVat: e.target.checked }))}
+                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
               />
+              <label htmlFor="includeVat" className="text-sm font-medium text-gray-700">
+                Include VAT
+              </label>
             </div>
+            {formData.includeVat && (
+              <div className="flex justify-between">
+                <label className="text-sm font-medium text-gray-700">VAT Rate (%)</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.01"
+                  value={formData.taxRate}
+                  onChange={(e) => setFormData(prev => ({ ...prev, taxRate: parseFloat(e.target.value) || 0 }))}
+                  className="w-24 px-2 py-1 border border-gray-300 rounded text-right focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder:text-gray-400"
+                />
+              </div>
+            )}
             <div className="flex justify-between">
               <label className="text-sm font-medium text-gray-700">Discount (%)</label>
               <input
@@ -317,7 +335,7 @@ export default function DocumentForm({ type, document, onSave, onCancel }: Docum
                 <span>-${((calculations.subtotal * formData.discount) / 100).toFixed(2)}</span>
               </div>
             )}
-            {formData.taxRate > 0 && (
+            {formData.includeVat && formData.taxRate > 0 && (
               <div className="flex justify-between">
                 <span className="text-gray-600">VAT ({formData.taxRate}%):</span>
                 <span className="font-medium">${calculations.taxAmount.toFixed(2)}</span>

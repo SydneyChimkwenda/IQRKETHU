@@ -294,7 +294,7 @@ export default function DocumentView({ document }: DocumentViewProps) {
               <span style={{ fontSize: '13px', color: '#dc2626', fontWeight: '600' }}>-{formatCurrency((document.subtotal * document.discount) / 100)}</span>
             </div>
           )}
-          {document.taxRate > 0 && (
+          {document.taxAmount > 0 && (
             <div className="flex justify-between mb-1" style={{ marginBottom: '4px' }}>
               <span style={{ fontSize: '13px', color: '#374151', fontWeight: '500' }}>VAT {document.taxRate}% :</span>
               <span style={{ fontSize: '13px', color: '#111827', fontWeight: '600' }}>{formatCurrency(document.taxAmount)}</span>

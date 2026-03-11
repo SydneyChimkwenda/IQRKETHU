@@ -25,6 +25,7 @@ export interface Document {
   discount: number;
   total: number;
   notes?: string;
+  includeVat?: boolean;
   status?: 'draft' | 'sent' | 'paid' | 'overdue';
   createdAt: string;
   updatedAt: string;
