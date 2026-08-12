@@ -112,7 +112,7 @@ export default function InvoicesPage() {
                         </span>
                       </td>
                       <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-right">
-                        {formatCurrency(invoice.total)}
+                        {formatCurrency(invoice.total, invoice.currency)}
                       </td>
                       <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <div className="flex justify-end space-x-2">

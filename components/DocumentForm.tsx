@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { LineItem, Document, DocumentType } from '@/types';
-import { calculateTotal, generateId, generateDocumentNumber } from '@/lib/utils';
+import { LineItem, Document, DocumentType, CurrencyCode, CURRENCY_OPTIONS } from '@/types';
+import { calculateTotal, generateId, generateDocumentNumber, formatCurrency } from '@/lib/utils';
 import { storage } from '@/lib/storage';
 import { X, Plus } from 'lucide-react';
 
@@ -29,11 +29,13 @@ export default function DocumentForm({ type, document, onSave, onCancel }: Docum
     customerAddress: document?.customerAddress || '',
     customerEmail: document?.customerEmail || '',
     customerPhone: document?.customerPhone || '',
+    currency: (document?.currency || 'MWK') as CurrencyCode,
     items: document?.items || [{ id: generateId(), description: '', quantity: 1, unitPrice: 0, total: 0 }],
     taxRate: document?.taxRate || 16.5,
     discount: document?.discount || 0,
     includeVat: document?.includeVat ?? true,
     notes: document?.notes || '',
+    termsAndConditions: document?.termsAndConditions || document?.notes || (type === 'invoice' ? 'Please send payment within 30 days of receiving this invoice. There will be 10% interest charge per month on late invoice.' : ''),
   });
 
   const effectiveTaxRate = formData.includeVat ? formData.taxRate : 0;
@@ -88,6 +90,7 @@ export default function DocumentForm({ type, document, onSave, onCancel }: Docum
       customerAddress: formData.customerAddress || undefined,
       customerEmail: formData.customerEmail || undefined,
       customerPhone: formData.customerPhone || undefined,
+      currency: formData.currency,
       items: formData.items,
       subtotal: calculations.subtotal,
       taxRate: formData.taxRate,
@@ -95,6 +98,7 @@ export default function DocumentForm({ type, document, onSave, onCancel }: Docum
       discount: formData.discount,
       total: calculations.total,
       notes: formData.notes || undefined,
+      termsAndConditions: formData.termsAndConditions || undefined,
       includeVat: formData.includeVat,
       status: document?.status || 'draft',
       createdAt: document?.createdAt || now,
@@ -146,6 +150,20 @@ export default function DocumentForm({ type, document, onSave, onCancel }: Docum
               />
             </div>
           )}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Currency
+            </label>
+            <select
+              value={formData.currency}
+              onChange={(e) => setFormData(prev => ({ ...prev, currency: e.target.value as CurrencyCode }))}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900"
+            >
+              {CURRENCY_OPTIONS.map(option => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 
@@ -261,7 +279,7 @@ export default function DocumentForm({ type, document, onSave, onCancel }: Docum
                     />
                   </td>
                   <td className="py-2 px-2 text-right">
-                    ${item.total.toFixed(2)}
+                    {formatCurrency(item.total, formData.currency)}
                   </td>
                   <td className="py-2 px-2">
                     {formData.items.length > 1 && (
@@ -327,40 +345,55 @@ export default function DocumentForm({ type, document, onSave, onCancel }: Docum
           <div className="space-y-2 text-right">
             <div className="flex justify-between">
               <span className="text-gray-600">Subtotal:</span>
-              <span className="font-medium">${calculations.subtotal.toFixed(2)}</span>
+              <span className="font-medium">{formatCurrency(calculations.subtotal, formData.currency)}</span>
             </div>
             {formData.discount > 0 && (
               <div className="flex justify-between text-red-600">
                 <span>Discount ({formData.discount}%):</span>
-                <span>-${((calculations.subtotal * formData.discount) / 100).toFixed(2)}</span>
+                <span>-{formatCurrency((calculations.subtotal * formData.discount) / 100, formData.currency)}</span>
               </div>
             )}
             {formData.includeVat && formData.taxRate > 0 && (
               <div className="flex justify-between">
                 <span className="text-gray-600">VAT ({formData.taxRate}%):</span>
-                <span className="font-medium">${calculations.taxAmount.toFixed(2)}</span>
+                <span className="font-medium">{formatCurrency(calculations.taxAmount, formData.currency)}</span>
               </div>
             )}
             <div className="flex justify-between text-lg font-bold pt-2 border-t">
               <span>Total:</span>
-              <span>${calculations.total.toFixed(2)}</span>
+              <span>{formatCurrency(calculations.total, formData.currency)}</span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Notes */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Notes
-        </label>
-        <textarea
-          value={formData.notes}
-          onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-          rows={3}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder:text-gray-400"
-          placeholder="Additional notes or terms..."
-        />
+      {/* Notes and Terms */}
+      <div className="bg-white rounded-lg shadow p-6 space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Notes
+          </label>
+          <textarea
+            value={formData.notes}
+            onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+            rows={3}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder:text-gray-400"
+            placeholder="Any extra internal notes..."
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Terms &amp; Conditions
+          </label>
+          <textarea
+            value={formData.termsAndConditions}
+            onChange={(e) => setFormData(prev => ({ ...prev, termsAndConditions: e.target.value }))}
+            rows={4}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 placeholder:text-gray-400"
+            placeholder="Enter payment terms, due dates, late fee policy, etc."
+          />
+        </div>
       </div>
 
       {/* Actions */}

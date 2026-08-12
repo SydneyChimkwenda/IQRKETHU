@@ -270,10 +270,10 @@ export default function DocumentView({ document }: DocumentViewProps) {
                 <td style={{ padding: '8px', fontSize: '13px', color: '#374151' }}>{index + 1}</td>
                 <td style={{ padding: '8px', fontSize: '13px', color: '#111827', fontWeight: '500', wordWrap: 'break-word' }}>{item.description}</td>
                 <td style={{ padding: '8px', textAlign: 'center', fontSize: '13px', color: '#374151' }}>{item.quantity}</td>
-                <td style={{ padding: '8px', textAlign: 'right', fontSize: '13px', color: '#374151' }}>{formatCurrency(item.unitPrice)}</td>
-                <td style={{ padding: '8px', textAlign: 'right', fontSize: '13px', color: '#111827', fontWeight: '600' }}>{formatCurrency(item.total)}</td>
+                <td style={{ padding: '8px', textAlign: 'right', fontSize: '13px', color: '#374151' }}>{formatCurrency(item.unitPrice, document.currency)}</td>
+                <td style={{ padding: '8px', textAlign: 'right', fontSize: '13px', color: '#111827', fontWeight: '600' }}>{formatCurrency(item.total, document.currency)}</td>
                 {document.type === 'receipt' && (
-                  <td style={{ padding: '8px', textAlign: 'right', fontSize: '13px', color: '#16a34a', fontWeight: '600' }}>{formatCurrency(0)}</td>
+                  <td style={{ padding: '8px', textAlign: 'right', fontSize: '13px', color: '#16a34a', fontWeight: '600' }}>{formatCurrency(0, document.currency)}</td>
                 )}
               </tr>
             ))}
@@ -286,24 +286,24 @@ export default function DocumentView({ document }: DocumentViewProps) {
         <div className="w-full sm:w-auto" style={{ width: '100%', maxWidth: '320px' }}>
           <div className="flex justify-between mb-1" style={{ marginBottom: '4px' }}>
             <span style={{ fontSize: '13px', color: '#374151', fontWeight: '500' }}>Sub Total :</span>
-            <span style={{ fontSize: '13px', color: '#111827', fontWeight: '600' }}>{formatCurrency(document.subtotal)}</span>
+            <span style={{ fontSize: '13px', color: '#111827', fontWeight: '600' }}>{formatCurrency(document.subtotal, document.currency)}</span>
           </div>
           {document.discount > 0 && (
             <div className="flex justify-between mb-1" style={{ marginBottom: '4px' }}>
               <span style={{ fontSize: '13px', color: '#dc2626', fontWeight: '500' }}>Discount ({document.discount}%) :</span>
-              <span style={{ fontSize: '13px', color: '#dc2626', fontWeight: '600' }}>-{formatCurrency((document.subtotal * document.discount) / 100)}</span>
+              <span style={{ fontSize: '13px', color: '#dc2626', fontWeight: '600' }}>-{formatCurrency((document.subtotal * document.discount) / 100, document.currency)}</span>
             </div>
           )}
           {document.taxAmount > 0 && (
             <div className="flex justify-between mb-1" style={{ marginBottom: '4px' }}>
               <span style={{ fontSize: '13px', color: '#374151', fontWeight: '500' }}>VAT {document.taxRate}% :</span>
-              <span style={{ fontSize: '13px', color: '#111827', fontWeight: '600' }}>{formatCurrency(document.taxAmount)}</span>
+              <span style={{ fontSize: '13px', color: '#111827', fontWeight: '600' }}>{formatCurrency(document.taxAmount, document.currency)}</span>
             </div>
           )}
           <div className={`${summaryBoxBg} text-white py-2 px-3 mt-1`} style={{ backgroundColor: primaryColor, color: '#ffffff', padding: '10px 12px', marginTop: '6px' }}>
             <div className="flex justify-between">
               <span className="font-bold" style={{ fontSize: '15px', fontWeight: 'bold' }}>GRAND TOTAL :</span>
-              <span className="font-bold" style={{ fontSize: '15px', fontWeight: 'bold' }}>{formatCurrency(document.total)}</span>
+              <span className="font-bold" style={{ fontSize: '15px', fontWeight: 'bold' }}>{formatCurrency(document.total, document.currency)}</span>
             </div>
           </div>
         </div>
@@ -341,9 +341,9 @@ export default function DocumentView({ document }: DocumentViewProps) {
           <p className="text-sm font-semibold text-gray-700 mb-0" style={{ fontSize: '11px', fontWeight: '600', color: '#374151', marginBottom: '3px' }}>
             Term and Conditions :
           </p>
-          {document.notes ? (
+          {(document.termsAndConditions || document.notes) ? (
             <p className="text-sm text-gray-600" style={{ fontSize: '11px', color: '#4b5563', lineHeight: '1.3', whiteSpace: 'pre-line' }}>
-              {document.notes}
+              {document.termsAndConditions || document.notes}
             </p>
           ) : (
             <p className="text-sm text-gray-600" style={{ fontSize: '11px', color: '#4b5563', lineHeight: '1.3' }}>

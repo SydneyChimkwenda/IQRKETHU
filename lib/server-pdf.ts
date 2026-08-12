@@ -24,9 +24,12 @@ function generateDocumentHTML(document: Document, moduleName?: string): string {
 
   // Format currency helper
   const formatCurrency = (amount: number): string => {
-    return new Intl.NumberFormat('en-MW', {
+    const normalizedCurrency = document.currency === 'MK' ? 'MWK' : (document.currency || 'MWK');
+    return new Intl.NumberFormat(normalizedCurrency === 'USD' ? 'en-US' : normalizedCurrency === 'GBP' ? 'en-GB' : normalizedCurrency === 'EUR' ? 'en-IE' : normalizedCurrency === 'ZMW' ? 'en-ZM' : 'en-MW', {
       style: 'currency',
-      currency: 'MWK',
+      currency: normalizedCurrency,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
     }).format(amount);
   };
 
@@ -410,8 +413,8 @@ function generateDocumentHTML(document: Document, moduleName?: string): string {
 
       <div style="margin-bottom: 6px;">
         <div style="font-size: 11px; font-weight: 600; color: #374151; margin-bottom: 3px;">Term and Conditions :</div>
-        <div style="font-size: 11px; color: #4b5563; line-height: 1.3;">
-          ${document.notes || (document.type === 'invoice' ? 'Please send payment within 30 days of receiving this invoice. There will be 10% interest charge per month on late invoice.' : '')}
+        <div style="font-size: 11px; color: #4b5563; line-height: 1.3; white-space: pre-line;">
+          ${document.termsAndConditions || document.notes || (document.type === 'invoice' ? 'Please send payment within 30 days of receiving this invoice. There will be 10% interest charge per month on late invoice.' : '')}
         </div>
       </div>
 

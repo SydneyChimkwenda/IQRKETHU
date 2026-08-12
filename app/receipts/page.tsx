@@ -93,7 +93,7 @@ export default function ReceiptsPage() {
                         {new Date(receipt.date).toLocaleDateString()}
                       </td>
                       <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-right">
-                        {formatCurrency(receipt.total)}
+                        {formatCurrency(receipt.total, receipt.currency)}
                       </td>
                       <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <div className="flex justify-end space-x-2">

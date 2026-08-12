@@ -105,7 +105,7 @@ export default function Home() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Total Revenue</p>
-                <p className="text-2xl font-bold text-gray-900">{formatCurrency(stats.totalRevenue)}</p>
+                <p className="text-2xl font-bold text-gray-900">{formatCurrency(stats.totalRevenue, 'MWK')}</p>
               </div>
               <TrendingUp className="h-8 w-8 text-green-500" />
             </div>
@@ -179,7 +179,7 @@ export default function Home() {
                         </span>
                       </div>
                       <div className="text-left sm:text-right">
-                        <p className="font-semibold text-gray-900">{formatCurrency(doc.total)}</p>
+                        <p className="font-semibold text-gray-900">{formatCurrency(doc.total, doc.currency)}</p>
                         <p className="text-sm text-gray-500">{new Date(doc.date).toLocaleDateString()}</p>
                       </div>
                     </div>

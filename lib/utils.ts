@@ -1,9 +1,25 @@
-import { DocumentType } from '@/types';
+import { CurrencyCode, DocumentType } from '@/types';
 
-export function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('en-MW', {
+export function normalizeCurrency(currency?: CurrencyCode): CurrencyCode {
+  if (currency === 'MK') return 'MWK';
+  return currency || 'MWK';
+}
+
+export function formatCurrency(amount: number, currency: CurrencyCode = 'MWK'): string {
+  const normalizedCurrency = normalizeCurrency(currency);
+  const localeMap: Record<string, string> = {
+    USD: 'en-US',
+    GBP: 'en-GB',
+    EUR: 'en-IE',
+    MWK: 'en-MW',
+    ZMW: 'en-ZM',
+  };
+
+  return new Intl.NumberFormat(localeMap[normalizedCurrency] || 'en-MW', {
     style: 'currency',
-    currency: 'MWK',
+    currency: normalizedCurrency,
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
   }).format(amount);
 }
 

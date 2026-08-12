@@ -140,9 +140,9 @@ export function generateEmailHTML(document: Document, pdfDownloadLink?: string):
                           <td style="padding: 12px; font-size: 14px; color: #374151; border: none;">${index + 1}</td>
                           <td style="padding: 12px; font-size: 14px; color: #111827; font-weight: 500; border: none;">${item.description}</td>
                           <td style="padding: 12px; text-align: center; font-size: 14px; color: #374151; border: none;">${item.quantity}</td>
-                          <td style="padding: 12px; text-align: right; font-size: 14px; color: #374151; border: none;">${formatCurrency(item.unitPrice)}</td>
-                          <td style="padding: 12px; text-align: right; font-size: 14px; color: #111827; font-weight: 600; border: none;">${formatCurrency(item.total)}</td>
-                          ${document.type === 'receipt' ? `<td style="padding: 12px; text-align: right; font-size: 14px; color: #16a34a; font-weight: 600; border: none;">${formatCurrency(0)}</td>` : ''}
+                          <td style="padding: 12px; text-align: right; font-size: 14px; color: #374151; border: none;">${formatCurrency(item.unitPrice, document.currency)}</td>
+                          <td style="padding: 12px; text-align: right; font-size: 14px; color: #111827; font-weight: 600; border: none;">${formatCurrency(item.total, document.currency)}</td>
+                          ${document.type === 'receipt' ? `<td style="padding: 12px; text-align: right; font-size: 14px; color: #16a34a; font-weight: 600; border: none;">${formatCurrency(0, document.currency)}</td>` : ''}
                         </tr>
                       `).join('')}
                     </tbody>
@@ -155,18 +155,18 @@ export function generateEmailHTML(document: Document, pdfDownloadLink?: string):
                         <table cellpadding="0" cellspacing="0" style="width: 280px;">
                           <tr>
                             <td style="padding: 8px 0; font-size: 14px; color: #374151; font-weight: 500;">Sub Total :</td>
-                            <td align="right" style="padding: 8px 0; font-size: 14px; color: #111827; font-weight: 600;">${formatCurrency(document.subtotal)}</td>
+                            <td align="right" style="padding: 8px 0; font-size: 14px; color: #111827; font-weight: 600;">${formatCurrency(document.subtotal, document.currency)}</td>
                           </tr>
                           ${document.discount > 0 ? `
                             <tr>
                               <td style="padding: 8px 0; font-size: 14px; color: #dc2626; font-weight: 500;">Discount (${document.discount}%) :</td>
-                              <td align="right" style="padding: 8px 0; font-size: 14px; color: #dc2626; font-weight: 600;">-${formatCurrency((document.subtotal * document.discount) / 100)}</td>
+                              <td align="right" style="padding: 8px 0; font-size: 14px; color: #dc2626; font-weight: 600;">-${formatCurrency((document.subtotal * document.discount) / 100, document.currency)}</td>
                             </tr>
                           ` : ''}
                           ${document.taxAmount > 0 ? `
                             <tr>
                               <td style="padding: 8px 0; font-size: 14px; color: #374151; font-weight: 500;">VAT ${document.taxRate}% :</td>
-                              <td align="right" style="padding: 8px 0; font-size: 14px; color: #111827; font-weight: 600;">${formatCurrency(document.taxAmount)}</td>
+                              <td align="right" style="padding: 8px 0; font-size: 14px; color: #111827; font-weight: 600;">${formatCurrency(document.taxAmount, document.currency)}</td>
                             </tr>
                           ` : ''}
                           <tr>
@@ -175,7 +175,7 @@ export function generateEmailHTML(document: Document, pdfDownloadLink?: string):
                                 <table width="100%" cellpadding="0" cellspacing="0">
                                   <tr>
                                     <td style="font-size: 16px; font-weight: bold; color: #ffffff;">GRAND TOTAL :</td>
-                                    <td align="right" style="font-size: 16px; font-weight: bold; color: #ffffff;">${formatCurrency(document.total)}</td>
+                                    <td align="right" style="font-size: 16px; font-weight: bold; color: #ffffff;">${formatCurrency(document.total, document.currency)}</td>
                                   </tr>
                                 </table>
                               </div>
@@ -218,8 +218,8 @@ export function generateEmailHTML(document: Document, pdfDownloadLink?: string):
                   <!-- Terms and Conditions -->
                   <div style="margin-bottom: 30px;">
                     <p style="margin: 0 0 8px 0; font-size: 13px; font-weight: 600; color: #374151;">Term and Conditions :</p>
-                    ${document.notes ? `
-                      <p style="margin: 0; font-size: 13px; color: #4b5563; line-height: 1.6; white-space: pre-line;">${document.notes}</p>
+                    ${(document.termsAndConditions || document.notes) ? `
+                      <p style="margin: 0; font-size: 13px; color: #4b5563; line-height: 1.6; white-space: pre-line;">${document.termsAndConditions || document.notes}</p>
                     ` : (document.type === 'invoice' ? `
                       <p style="margin: 0; font-size: 13px; color: #4b5563; line-height: 1.6;">Please send payment within 30 days of receiving this invoice. There will be 10% interest charge per month on late invoice.</p>
                     ` : '')}
@@ -307,7 +307,7 @@ export async function sendDocumentEmailViaBackend(
         const body = encodeURIComponent(
           `Dear ${recipientName},\n\n` +
           `Please find the ${document.type} ${document.documentNumber} from ${getModuleName()}.${pdfLinkText}\n\n` +
-          `Total Amount: ${formatCurrency(document.total)}\n` +
+          `Total Amount: ${formatCurrency(document.total, document.currency)}\n` +
           `Date: ${new Date(document.date).toLocaleDateString()}\n\n` +
           `Thank you for your business!\n\n` +
           `Best regards,\n` +
@@ -343,7 +343,7 @@ export async function sendDocumentEmailViaBackend(
       const body = encodeURIComponent(
         `Dear ${recipientName},\n\n` +
         `Please find the ${document.type} ${document.documentNumber} from ${getModuleName()}.${pdfLinkText}\n\n` +
-        `Total Amount: ${formatCurrency(document.total)}\n` +
+        `Total Amount: ${formatCurrency(document.total, document.currency)}\n` +
         `Date: ${new Date(document.date).toLocaleDateString()}\n\n` +
         `Thank you for your business!\n\n` +
         `Best regards,\n` +
@@ -444,7 +444,7 @@ export async function sendDocumentEmail(
       documentUrl: documentUrl, // Support both naming conventions
       document_number: document.documentNumber,
       document_type: documentType,
-      total_amount: formatCurrency(document.total),
+      total_amount: formatCurrency(document.total, document.currency),
       document_date: new Date(document.date).toLocaleDateString(),
     };
 
